@@ -1,0 +1,18 @@
+{
+  "name": "pignus",
+  "version": "1.0.0",
+  "description": "Fetch paid Mercado Libre orders and append a financial table to Google Sheets.",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "dependencies": {
+    "axios": "^1.7.9",
+    "dotenv": "^16.4.7",
+    "googleapis": "^144.0.0"
+  }
+}

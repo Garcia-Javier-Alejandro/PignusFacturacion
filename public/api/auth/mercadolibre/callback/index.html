@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Mercado Libre Callback | Pignus</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <section class="panel">
+        <p class="eyebrow">Mercado Libre OAuth</p>
+        <h1>Authorization callback</h1>
+        <p class="lede">
+          If Mercado Libre redirected you here, copy the authorization code below
+          and use it in the token exchange command.
+        </p>
+        <div class="code-box">
+          <label for="auth-code">Authorization code</label>
+          <input id="auth-code" type="text" readonly value="">
+          <button id="copy-code" type="button">Copy code</button>
+        </div>
+        <p id="status" class="status"></p>
+      </section>
+    </main>
+    <script>
+      const params = new URLSearchParams(window.location.search);
+      const code = params.get('code') || '';
+      const error = params.get('error');
+      const codeInput = document.querySelector('#auth-code');
+      const status = document.querySelector('#status');
+      const copyButton = document.querySelector('#copy-code');
+
+      codeInput.value = code;
+
+      if (error) {
+        status.textContent = `Mercado Libre returned an error: ${error}`;
+      } else if (code) {
+        status.textContent = 'Code received. Exchange it for an access token soon; authorization codes expire.';
+      } else {
+        status.textContent = 'No code found in the URL yet.';
+      }
+
+      copyButton.addEventListener('click', async () => {
+        if (!code) {
+          return;
+        }
+
+        await navigator.clipboard.writeText(code);
+        status.textContent = 'Code copied.';
+      });
+    </script>
+  </body>
+</html>
