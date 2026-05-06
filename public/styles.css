@@ -74,6 +74,11 @@ button {
   text-decoration: none;
 }
 
+button:disabled {
+  cursor: progress;
+  opacity: 0.65;
+}
+
 .code-box {
   display: grid;
   gap: 10px;
@@ -128,7 +133,8 @@ input {
 }
 
 .debug-summary > div,
-.order-card {
+.order-card,
+.table-panel {
   background: #ffffff;
   border: 1px solid #d9dee7;
   border-radius: 8px;
@@ -158,6 +164,52 @@ input {
 .orders {
   display: grid;
   gap: 16px;
+}
+
+.table-panel {
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+
+.table-panel__header {
+  align-items: center;
+  border-bottom: 1px solid #e5e9ef;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  padding: 18px;
+}
+
+.table-panel h2 {
+  font-size: 20px;
+  margin: 0;
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+table {
+  border-collapse: collapse;
+  min-width: 1040px;
+  width: 100%;
+}
+
+th,
+td {
+  border-bottom: 1px solid #e5e9ef;
+  font-size: 14px;
+  padding: 12px 14px;
+  text-align: left;
+  vertical-align: top;
+  white-space: nowrap;
+}
+
+th {
+  background: #f6f7f9;
+  color: #44515f;
+  font-size: 12px;
+  text-transform: uppercase;
 }
 
 .admin-key-panel {
@@ -242,6 +294,12 @@ pre {
   padding: 16px;
 }
 
+.raw-json {
+  border-radius: 0;
+  margin: 0;
+  max-height: 460px;
+}
+
 @media (max-width: 640px) {
   .shell {
     align-items: stretch;
@@ -271,6 +329,11 @@ pre {
   }
 
   .admin-key-panel > div {
+    flex-direction: column;
+  }
+
+  .table-panel__header {
+    align-items: stretch;
     flex-direction: column;
   }
 }

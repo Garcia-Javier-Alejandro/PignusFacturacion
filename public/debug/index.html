@@ -24,6 +24,27 @@
           <button id="save-admin-key" type="button">Save</button>
         </div>
       </section>
+      <section class="table-panel">
+        <div class="table-panel__header">
+          <div>
+            <h2>Google Sheets output</h2>
+            <p id="export-status" class="muted">Rows are built from the current API response.</p>
+          </div>
+          <button id="export-sheet" type="button">Export to Google Sheets</button>
+        </div>
+        <div class="table-wrap">
+          <table id="output-table"></table>
+        </div>
+      </section>
+      <section class="table-panel">
+        <div class="table-panel__header">
+          <div>
+            <h2>Raw API returns</h2>
+            <p class="muted">Unmodified paid order objects returned by the server-side Mercado Libre request.</p>
+          </div>
+        </div>
+        <pre id="raw-orders" class="raw-json"></pre>
+      </section>
       <section id="orders" class="orders"></section>
     </main>
 
@@ -51,6 +72,19 @@
       });
 
       const formatMoney = (value) => money.format(Number(value || 0));
+      const outputMoneyColumns = new Set([
+        'Pago',
+        'Recargo MP',
+        'Retencion IIBB',
+        'Imp SIRTAC',
+        'Costo Envio',
+        'Neto',
+        'Validacion Neto',
+      ]);
+
+      let latestLimit = 10;
+      let latestAdminKey = '';
+      let latestOutputRows = [];
 
       const metric = (label, value) => {
         const node = document.createElement('div');
@@ -59,8 +93,53 @@
         return node;
       };
 
+      const renderOutputTable = (headers = [], rows = []) => {
+        const table = document.querySelector('#output-table');
+        table.innerHTML = '';
+
+        const thead = document.createElement('thead');
+        const headRow = document.createElement('tr');
+
+        for (const header of headers) {
+          const th = document.createElement('th');
+          th.textContent = header;
+          headRow.append(th);
+        }
+
+        thead.append(headRow);
+        table.append(thead);
+
+        const tbody = document.createElement('tbody');
+
+        for (const row of rows) {
+          const tr = document.createElement('tr');
+
+          row.forEach((value, index) => {
+            const td = document.createElement('td');
+            const header = headers[index];
+            td.textContent = outputMoneyColumns.has(header) ? formatMoney(value) : value;
+            tr.append(td);
+          });
+
+          tbody.append(tr);
+        }
+
+        if (rows.length === 0) {
+          const tr = document.createElement('tr');
+          const td = document.createElement('td');
+          td.colSpan = Math.max(headers.length, 1);
+          td.textContent = 'No rows returned.';
+          tr.append(td);
+          tbody.append(tr);
+        }
+
+        table.append(tbody);
+      };
+
       const adminKeyInput = document.querySelector('#admin-key');
       const saveAdminKeyButton = document.querySelector('#save-admin-key');
+      const exportButton = document.querySelector('#export-sheet');
+      const exportStatus = document.querySelector('#export-status');
 
       adminKeyInput.value = localStorage.getItem('pignus.adminApiKey') || '';
       saveAdminKeyButton.addEventListener('click', () => {
@@ -68,16 +147,48 @@
         render();
       });
 
+      exportButton.addEventListener('click', async () => {
+        exportButton.disabled = true;
+        exportStatus.textContent = 'Exporting rows to Google Sheets...';
+
+        try {
+          const response = await fetch('/api/orders/export', {
+            method: 'POST',
+            headers: {
+              'content-type': 'application/json',
+              ...(latestAdminKey ? { authorization: `Bearer ${latestAdminKey}` } : {}),
+            },
+            body: JSON.stringify({ limit: latestLimit, rows: latestOutputRows }),
+          });
+
+          if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.error || 'Export request failed.');
+          }
+
+          const result = await response.json();
+          exportStatus.textContent = `Exported ${result.exported_rows} new rows to ${result.sheet_name}. Skipped ${result.skipped_existing} existing orders.`;
+        } catch (error) {
+          exportStatus.textContent = error.message;
+        } finally {
+          exportButton.disabled = false;
+        }
+      });
+
       const render = async () => {
         const summary = document.querySelector('#summary');
         const orders = document.querySelector('#orders');
         const template = document.querySelector('#order-template');
         const adminKey = localStorage.getItem('pignus.adminApiKey') || '';
+        latestAdminKey = adminKey;
 
         orders.innerHTML = '';
+        document.querySelector('#raw-orders').textContent = '';
+        latestOutputRows = [];
+        renderOutputTable([], []);
 
         try {
-          const response = await fetch('/api/orders/summary?limit=10', {
+          const response = await fetch(`/api/orders/summary?limit=${latestLimit}`, {
             cache: 'no-store',
             headers: adminKey ? { authorization: `Bearer ${adminKey}` } : {},
           });
@@ -93,6 +204,10 @@
             <div><span>Orders returned</span><strong>${data.count}</strong></div>
             <div><span>Source</span><strong>Cloudflare Function</strong></div>
           `;
+          renderOutputTable(data.output_headers, data.output_rows);
+          latestOutputRows = data.output_rows || [];
+          document.querySelector('#raw-orders').textContent = JSON.stringify(data.raw_orders, null, 2);
+          exportStatus.textContent = `${latestOutputRows.length} rows ready for Google Sheets export.`;
 
           for (const order of data.orders) {
             const row = order.financial_row;

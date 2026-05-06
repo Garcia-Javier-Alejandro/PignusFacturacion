@@ -1,6 +1,20 @@
 const toNumber = (value) => Number(value || 0);
 const normalize = (value = '') => String(value).toLowerCase();
 
+export const OUTPUT_HEADERS = [
+  'Orden ID',
+  'Fecha',
+  'Nombre',
+  'Pago',
+  'Recargo MP',
+  'Retencion IIBB',
+  'Imp SIRTAC',
+  'Costo Envio',
+  'Neto',
+  'Localidad',
+  'Validacion Neto',
+];
+
 const getFeeAmount = (fee) => toNumber(fee.amount ?? fee.fee_amount);
 
 const isMercadoPagoFee = (fee) => {
@@ -45,7 +59,7 @@ const calculateMercadoPagoFee = (order, payments) => {
   return paymentFee || (order.order_items || []).reduce((total, item) => total + toNumber(item.sale_fee), 0);
 };
 
-export function summarizeOrder(order) {
+export function transformOrderToRow(order) {
   const payments = order.payments || [];
   const pago = calculateProductRevenue(order, payments);
   const recargoMp = calculateMercadoPagoFee(order, payments);
@@ -55,23 +69,51 @@ export function summarizeOrder(order) {
   const netReceivedAmount = sumPaymentsField(payments, 'net_received_amount');
   const neto = pago - (recargoMp + retencionIibb + impSirtac + costoEnvio);
 
+  return [
+    String(order.id || ''),
+    order.date_created || '',
+    `${order.buyer?.first_name || ''} ${order.buyer?.last_name || ''}`.trim(),
+    pago,
+    recargoMp,
+    retencionIibb,
+    impSirtac,
+    costoEnvio,
+    neto,
+    order.shipping?.receiver_address?.city?.name || '',
+    neto - netReceivedAmount,
+  ];
+}
+
+export function transformOrdersToRows(orders) {
+  return orders.map(transformOrderToRow);
+}
+
+export function summarizeOrder(order) {
+  const row = transformOrderToRow(order);
+  const payments = order.payments || [];
+  const netReceivedAmount = sumPaymentsField(payments, 'net_received_amount');
+
   return {
-    order_id: String(order.id || ''),
+    order_id: row[0],
     date_created: order.date_created,
     status: order.status,
-    buyer_name: `${order.buyer?.first_name || ''} ${order.buyer?.last_name || ''}`.trim(),
-    localidad: order.shipping?.receiver_address?.city?.name || '',
+    buyer_name: row[2],
+    localidad: row[9],
     payments_count: payments.length,
     fee_details_count: payments.reduce((total, payment) => total + (payment.fee_details || []).length, 0),
     financial_row: {
-      pago,
-      recargo_mp: recargoMp,
-      retencion_iibb: retencionIibb,
-      imp_sirtac: impSirtac,
-      costo_envio: costoEnvio,
-      neto,
+      orden_id: row[0],
+      fecha: row[1],
+      nombre: row[2],
+      pago: row[3],
+      recargo_mp: row[4],
+      retencion_iibb: row[5],
+      imp_sirtac: row[6],
+      costo_envio: row[7],
+      neto: row[8],
+      localidad: row[9],
       net_received_amount: netReceivedAmount,
-      validacion_neto: neto - netReceivedAmount,
+      validacion_neto: row[10],
     },
     payments: payments.map((payment) => ({
       status: payment.status,

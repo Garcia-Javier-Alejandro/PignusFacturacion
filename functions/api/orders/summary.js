@@ -1,6 +1,10 @@
 import { errorResponse, json, requireAdmin } from '../../_lib/http.js';
 import { fetchPaidOrders } from '../../_lib/meliOrders.js';
-import { summarizeOrder } from '../../_lib/transform.js';
+import {
+  OUTPUT_HEADERS,
+  summarizeOrder,
+  transformOrdersToRows,
+} from '../../_lib/transform.js';
 
 export async function onRequestGet({ request, env }) {
   const authError = await requireAdmin(request, env);
@@ -17,6 +21,9 @@ export async function onRequestGet({ request, env }) {
     return json({
       generated_at: new Date().toISOString(),
       count: orders.length,
+      output_headers: OUTPUT_HEADERS,
+      output_rows: transformOrdersToRows(orders),
+      raw_orders: orders,
       orders: orders.map(summarizeOrder),
     });
   } catch (error) {
