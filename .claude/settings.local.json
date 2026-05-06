@@ -5,7 +5,15 @@
       "Bash(git rm *)",
       "Bash(git add *)",
       "Bash(git commit -m ' *)",
-      "Bash(git push *)"
+      "Bash(git push *)",
+      "Bash(npx wrangler *)",
+      "Bash(node -r dotenv/config -e \"process.stdout.write\\(process.env.GOOGLE_SHEET_ID || ''\\)\")",
+      "Bash(node -r dotenv/config -e \"process.stdout.write\\(process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL || ''\\)\")",
+      "Bash(node -r dotenv/config -e \"process.stdout.write\\(process.env.GOOGLE_PRIVATE_KEY || ''\\)\")",
+      "Bash(node -r dotenv/config -e \"process.stdout.write\\(process.env.SHEET_NAME || ''\\)\")",
+      "Bash(npm run *)",
+      "Bash(node *)",
+      "PowerShell(Remove-Item *)"
     ]
   }
 }
