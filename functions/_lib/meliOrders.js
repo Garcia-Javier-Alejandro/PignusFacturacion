@@ -100,15 +100,23 @@ export async function fetchAllPaidOrders(env) {
 }
 
 // Fetch paid orders created within the last `days` days.
-// Fetches up to 4 pages (200 orders) then filters by date in code.
+// Probes total count first, then starts pagination near the tail so the most
+// recent orders are captured regardless of API sort order.
 export async function fetchRecentPaidOrders(env, days = 30) {
   const tokens = await getValidAccessToken(env);
   const sellerId = tokens.seller_id || env.MELI_SELLER_ID;
   const dateFrom = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
 
-  const orders = [];
-  let offset = 0;
+  // One cheap request to learn the total order count.
+  const probe = await requestOrders({ seller: sellerId, limit: '1', offset: '0' }, tokens.access_token);
+  const probeData = await probe.json();
+  if (!probe.ok) throw new Error(probeData.message || probeData.error || 'Mercado Libre orders request failed');
+
+  const total = probeData.paging?.total ?? 0;
   const MAX_PAGES = 4;
+  let offset = Math.max(0, total - PAGE_SIZE * MAX_PAGES);
+
+  const orders = [];
 
   for (let page = 0; page < MAX_PAGES; page++) {
     const response = await requestOrders({

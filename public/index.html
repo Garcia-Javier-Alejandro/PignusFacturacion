@@ -24,7 +24,7 @@
     <main class="main">
       <div class="toolbar">
         <button id="fetch-btn" type="button" class="btn btn--primary">
-          <span id="fetch-label">Fetch Last Month</span>
+          <span id="fetch-label">Fetch last 200 orders</span>
         </button>
         <button id="export-btn" type="button" class="btn btn--secondary" disabled>Append new entries to Google Sheet</button>
         <button id="open-btn" type="button" class="btn btn--ghost" disabled>Open Sheet ↗</button>
@@ -132,7 +132,7 @@
         tableSection.hidden = true;
         exportBtn.disabled = true;
         openBtn.disabled = true;
-        setStatus('Loading orders from Mercado Libre…');
+        setStatus('Loading orders…');
 
         try {
           const res = await fetch('/api/orders/recent', { headers: authHeader() });
@@ -143,12 +143,12 @@
           exportBtn.disabled = false;
           openBtn.disabled = false;
           const n = data.rows.length;
-          setStatus(`${n} order${n !== 1 ? 's' : ''} from the last 30 days.`, 'ok');
+          setStatus(`${n} order${n !== 1 ? 's' : ''} loaded.`, 'ok');
         } catch (err) {
           setStatus(err.message, 'err');
         } finally {
           fetchBtn.disabled = false;
-          fetchLbl.textContent = 'Fetch Last Month';
+          fetchLbl.textContent = 'Fetch last 200 orders';
         }
       });
 
