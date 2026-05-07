@@ -16,14 +16,14 @@ export async function onRequestGet({ request, env }) {
     const orders = await enrichOrders(recent, env);
 
     // Fetch IIBB/SIRTAC for all orders in one billing API call, then inject per order.
-    const billingTaxes = await fetchBillingTaxes(orders, env);
+    const { taxes: billingTaxes, _debug: billingDebug } = await fetchBillingTaxes(orders, env);
     for (const order of orders) {
       const tax = billingTaxes.get(String(order.id));
       if (tax) { order._iibb = tax.iibb; order._sirtac = tax.sirtac; }
     }
 
     const rows = transformOrdersToRows(orders);
-    return json({ headers: OUTPUT_HEADERS, rows });
+    return json({ headers: OUTPUT_HEADERS, rows, _billing: billingDebug });
   } catch (error) {
     return errorResponse(500, error.message);
   }

@@ -167,9 +167,10 @@ export async function fetchBillingTaxes(orders, env) {
     { headers: { accept: 'application/json', authorization: `Bearer ${tokens.access_token}` } },
   );
 
-  if (!res.ok) return new Map();
-
   const data = await res.json();
+
+  if (!res.ok) return { taxes: new Map(), _debug: { status: res.status, body: data } };
+
   const taxes = new Map();
 
   for (const item of data.results || []) {
@@ -188,5 +189,5 @@ export async function fetchBillingTaxes(orders, env) {
     taxes.set(String(item.order_id), { iibb, sirtac });
   }
 
-  return taxes;
+  return { taxes, _debug: { status: res.status, first_result: data.results?.[0] ?? data } };
 }
