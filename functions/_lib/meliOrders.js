@@ -163,5 +163,7 @@ export async function enrichOrders(orders, env) {
     enriched.push(res.ok ? await res.json() : order);
   }
 
-  return enriched;
+  // Return enriched orders + unenriched remainder (IIBB/SIRTAC/Localidad will be
+  // empty for orders beyond the cap, but at least they appear in the table).
+  return [...enriched, ...orders.slice(ENRICH_LIMIT)];
 }

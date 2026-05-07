@@ -18,7 +18,7 @@ export async function onRequestGet({ request, env }) {
     const orders = await enrichOrders(recent, env);
     const rows = transformOrdersToRows(orders);
 
-    return json({ headers: OUTPUT_HEADERS, rows });
+    return json({ headers: OUTPUT_HEADERS, rows, _sample: orders[0] ?? null });
   } catch (error) {
     return errorResponse(500, error.message);
   }
