@@ -99,8 +99,8 @@ export async function fetchAllPaidOrders(env) {
   return orders.filter(isPaidOrder);
 }
 
-// Fetch paid orders created within the last `days` days. Stops pagination early once
-// orders older than the cutoff are encountered, keeping subrequest count low.
+// Fetch paid orders created within the last `days` days.
+// Fetches up to 4 pages (200 orders) then filters by date in code.
 export async function fetchRecentPaidOrders(env, days = 30) {
   const tokens = await getValidAccessToken(env);
   const sellerId = tokens.seller_id || env.MELI_SELLER_ID;
@@ -108,7 +108,7 @@ export async function fetchRecentPaidOrders(env, days = 30) {
 
   const orders = [];
   let offset = 0;
-  const MAX_PAGES = 4; // 4 pages × 50 = 200 orders max; keeps subrequests ≤ 5
+  const MAX_PAGES = 4;
 
   for (let page = 0; page < MAX_PAGES; page++) {
     const response = await requestOrders({
@@ -126,20 +126,15 @@ export async function fetchRecentPaidOrders(env, days = 30) {
     const results = data.results || [];
     if (!results.length) break;
 
-    let reachedCutoff = false;
-    for (const order of results) {
-      if (order.date_created && order.date_created < dateFrom) {
-        reachedCutoff = true;
-        break;
-      }
-      orders.push(order);
-    }
+    orders.push(...results);
 
-    if (reachedCutoff || results.length < PAGE_SIZE) break;
+    if (results.length < PAGE_SIZE) break;
     offset += results.length;
   }
 
-  return orders.filter(isPaidOrder);
+  return orders
+    .filter(isPaidOrder)
+    .filter((o) => o.date_created && o.date_created >= dateFrom);
 }
 
 // Enrich orders with full detail (fee_details, receiver_address, buyer name).
