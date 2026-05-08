@@ -28,6 +28,7 @@
         </button>
         <button id="export-btn" type="button" class="btn btn--secondary" disabled>Append new entries to Google Sheet</button>
         <button id="open-btn" type="button" class="btn btn--ghost" disabled>Open Sheet ↗</button>
+        <button id="auth-btn" type="button" class="btn btn--ghost">Re-authorize ML ↗</button>
         <p id="status" class="status" aria-live="polite"></p>
       </div>
 
@@ -172,6 +173,8 @@
       });
 
       openBtn.addEventListener('click', () => window.open(SHEET_URL, '_blank'));
+
+      $('auth-btn').addEventListener('click', () => window.location.href = '/api/meli/login');
     </script>
   </body>
 </html>
