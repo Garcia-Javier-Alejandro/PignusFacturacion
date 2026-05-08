@@ -185,10 +185,10 @@ export async function fetchBillingTaxes(orders, env) {
 
     for (const payment of item.payment_info || []) {
       for (const tax of payment.tax_details || []) {
-        if (tax.tax_status !== 'applied') continue;
         const detail = (tax.mov_detail || '').toLowerCase();
-        if (detail.includes('iibb')) iibb += Number(tax.original_amount || 0);
-        else if (detail.includes('sirtac')) sirtac += Number(tax.original_amount || 0);
+        const entity = (tax.mov_financial_entity || '').toLowerCase();
+        if (detail.includes('sirtac')) sirtac += Number(tax.original_amount || 0);
+        else if (detail.includes('iibb') || entity.includes('iibb')) iibb += Number(tax.original_amount || 0);
       }
     }
 
