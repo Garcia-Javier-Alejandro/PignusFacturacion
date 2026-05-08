@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Pignus</title>
+    <title>Pignus-Meli</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Lora:ital@0;1&display=swap" rel="stylesheet">
@@ -11,10 +11,7 @@
   </head>
   <body>
     <header class="header">
-      <div>
-        <h1 class="header__title">Pignus</h1>
-        <p class="header__sub">Mercado Libre → Google Sheets</p>
-      </div>
+      <img src="/Logo_Pignus_Facturacion.png" alt="Pignus" class="header__logo">
       <div class="header__key">
         <input id="admin-key" type="password" placeholder="Admin API key" autocomplete="off" spellcheck="false">
         <button id="save-key" type="button" class="btn btn--ghost">Save</button>
@@ -28,8 +25,11 @@
         </button>
         <button id="export-btn" type="button" class="btn btn--secondary" disabled>Append new entries to Google Sheet</button>
         <button id="open-btn" type="button" class="btn btn--ghost" disabled>Open Sheet ↗</button>
-        <button id="auth-btn" type="button" class="btn btn--ghost">Re-authorize ML ↗</button>
         <p id="status" class="status" aria-live="polite"></p>
+      </div>
+
+      <div hidden id="auth-section" style="margin-top:1rem">
+        <button id="auth-btn" type="button" class="btn btn--ghost">Re-authorize ML ↗</button>
       </div>
 
       <section id="table-section" hidden>
@@ -38,6 +38,10 @@
         </div>
       </section>
     </main>
+
+    <footer class="footer">
+      <p>Hecho por Javi con ☕ &amp; ✨ en 2026</p>
+    </footer>
 
     <script>
       const SHEET_URL = 'https://docs.google.com/spreadsheets/d/1Z6Z8UBOw8gkz77oz8M3L7CXlxt5ar146A3-n9EJLEDw';

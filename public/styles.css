@@ -37,21 +37,9 @@ body {
   background: var(--card);
 }
 
-.header__title {
-  font-family: 'Lora', Georgia, serif;
-  font-style: italic;
-  font-size: 1.75rem;
-  font-weight: 400;
-  color: var(--ink);
-  line-height: 1;
-}
-
-.header__sub {
-  margin-top: 0.2rem;
-  font-size: 0.65rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--ink-3);
+.header__logo {
+  height: 2.75rem;
+  width: auto;
 }
 
 .header__key {
@@ -65,7 +53,7 @@ body {
 input[type="password"] {
   background: var(--cream);
   border: 1px solid var(--border);
-  border-radius: 3px;
+  border-radius: 0.5rem;
   color: var(--ink);
   font-family: inherit;
   font-size: 0.8rem;
@@ -88,7 +76,7 @@ input[type="password"]:focus { border-color: var(--border-mid); }
   white-space: nowrap;
   padding: 0.45rem 1rem;
   border: 1px solid transparent;
-  border-radius: 3px;
+  border-radius: 0.5rem;
   cursor: pointer;
   transition: background 0.12s, border-color 0.12s, color 0.12s, opacity 0.12s;
 }
@@ -154,7 +142,7 @@ input[type="password"]:focus { border-color: var(--border-mid); }
 .table-wrap {
   overflow-x: auto;
   border: 1px solid var(--border);
-  border-radius: 3px;
+  border-radius: 0.75rem;
   scrollbar-width: auto;
   scrollbar-color: var(--border-mid) var(--cream);
 }
@@ -208,4 +196,16 @@ input[type="password"]:focus { border-color: var(--border-mid); }
   text-align: center;
   color: var(--ink-3);
   white-space: normal;
+}
+
+/* ── Footer ── */
+
+.footer {
+  margin-top: 3rem;
+  padding: 1.5rem 2rem 2rem;
+  border-top: 1px solid var(--border);
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--ink-3);
+  letter-spacing: 0.02em;
 }
