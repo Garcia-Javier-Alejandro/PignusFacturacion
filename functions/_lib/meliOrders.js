@@ -140,6 +140,34 @@ export async function enrichOrders(orders, env) {
   return [...enriched, ...orders.slice(ENRICH_LIMIT)];
 }
 
+export async function fetchFiscalDate(packId, orderId, accessToken) {
+  const path = packId ? `packs/${packId}` : `orders/${orderId}`;
+  const res = await fetch(`https://api.mercadolibre.com/${path}/fiscal_documents`, {
+    headers: { accept: 'application/json', authorization: `Bearer ${accessToken}` },
+  });
+  if (!res.ok) return null;
+  const data = await res.json();
+  const docs = Array.isArray(data) ? data : (data.results || []);
+  return docs[0]?.date ?? null;
+}
+
+export async function fetchCouponAmount(orderId, accessToken) {
+  const res = await fetch(`https://api.mercadolibre.com/orders/${orderId}/discounts`, {
+    headers: { accept: 'application/json', authorization: `Bearer ${accessToken}` },
+  });
+  if (!res.ok) return 0;
+  const data = await res.json();
+  let total = 0;
+  for (const detail of data.details || []) {
+    if (detail.type === 'coupon') {
+      for (const item of detail.items || []) {
+        total += Number(item.amounts?.total || 0);
+      }
+    }
+  }
+  return total;
+}
+
 export async function fetchBillingTaxes(orders, env) {
   const tokens = await getValidAccessToken(env);
   const orderIds = orders.map((o) => o.id).join(',');

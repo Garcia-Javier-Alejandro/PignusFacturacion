@@ -25,7 +25,7 @@
         </button>
         <button id="import-btn" type="button" class="btn btn--secondary">Import 2026 history ↓</button>
         <button id="export-btn" type="button" class="btn btn--secondary" disabled>Append new entries to Google Sheet</button>
-        <button id="open-btn" type="button" class="btn btn--ghost" disabled>Open Sheet ↗</button>
+        <button id="open-btn" type="button" class="btn btn--secondary" disabled>Open Sheet ↗</button>
         <p id="status" class="status" aria-live="polite"></p>
       </div>
 
@@ -42,7 +42,7 @@
       </div>
 
       <div class="add-row-bar">
-        <button id="add-row-btn" type="button" class="btn btn--ghost">+ Agregar fila manual</button>
+        <button id="add-row-btn" type="button" class="btn btn--primary">+ Agregar fila</button>
       </div>
 
       <section id="table-section">
@@ -63,7 +63,7 @@
     <script>
       const SHEET_URL = 'https://docs.google.com/spreadsheets/d/1Z6Z8UBOw8gkz77oz8M3L7CXlxt5ar146A3-n9EJLEDw';
       const HISTORY_CUTOFF = new Date('2026-01-01T00:00:00');
-      const MONEY_COLS = new Set(['Pago', 'Recargo MP', 'Retencion IIBB', 'Imp SIRTAC', 'Suma Impuestos', 'Costo Envio', 'Neto']);
+      const MONEY_COLS = new Set(['Pago', 'Recargo MP', 'Retencion IIBB', 'Imp SIRTAC', 'Suma Impuestos', 'Costo Envio', 'Neto', 'Cupón']);
       const READONLY_COLS = new Set(['Suma Impuestos', 'Neto']);
 
       const ars = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' });
@@ -184,7 +184,7 @@
           row.forEach((val, i) => {
             const td = document.createElement('td');
             const h = headers[i];
-            if (h === 'Fecha Compra') {
+            if (h === 'Fecha Compra' || h === 'Fecha Factura') {
               td.textContent = formatDate(val);
             } else if (MONEY_COLS.has(h)) {
               td.textContent = ars.format(Number(val || 0));
@@ -271,7 +271,7 @@
           } else {
             const isNum = MONEY_COLS.has(h);
             const input = document.createElement('input');
-            input.type = isNum ? 'number' : (h === 'Fecha Compra' ? 'date' : 'text');
+            input.type = isNum ? 'number' : ((h === 'Fecha Compra' || h === 'Fecha Factura') ? 'date' : 'text');
             input.step = '0.01';
             input.className = `manual-input${isNum ? ' num' : ''}`;
             if (h === 'Orígen') input.value = 'MANUAL';
@@ -309,6 +309,22 @@
 
       let lastFetchedRows = [];
 
+      // ── Second enrichment pass (Fecha Factura + Cupón) ───────────────────
+      const enrichExtra = async () => {
+        let done = false;
+        while (!done) {
+          try {
+            const res = await fetch('/api/orders/enrich-extra', { headers: authHeader() });
+            if (!res.ok) break;
+            const data = await res.json();
+            applyData(data);
+            done = data.enrichDone;
+          } catch {
+            break;
+          }
+        }
+      };
+
       // ── Data loading helpers ──────────────────────────────────────────────
       const applyData = (data) => {
         lastFetchedRows = data.rows || [];
@@ -337,6 +353,7 @@
           applyData(data);
           const n = data.meta?.loaded ?? data.rows.length;
           setStatus(`${n} order${n !== 1 ? 's' : ''} loaded.`, 'ok');
+          await enrichExtra();
         } catch (err) {
           setStatus(err.message, 'err');
         } finally {
@@ -366,7 +383,6 @@
             applyData(data);
             setStatus(`Importando… ${data.meta.loaded} orders — oldest: ${formatDate(data.meta.oldest_date)}`);
             if (data.meta.done) {
-              setStatus('Historia importada hasta 01/01/2026.', 'ok');
               importRunning = false;
               break;
             }
@@ -378,7 +394,12 @@
           }
         }
 
-        if (!importRunning) importBtn.textContent = 'Import 2026 history ↓';
+        if (!importRunning) {
+          importBtn.textContent = 'Import 2026 history ↓';
+          setStatus('Enriqueciendo datos adicionales…');
+          await enrichExtra();
+          setStatus('Historia importada hasta 01/01/2026.', 'ok');
+        }
       });
 
       exportBtn.addEventListener('click', async () => {

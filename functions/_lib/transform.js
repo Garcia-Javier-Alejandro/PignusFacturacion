@@ -14,6 +14,8 @@ export const OUTPUT_HEADERS = [
   'Localidad',
   'Provincia',
   'Orígen',
+  'Fecha Factura',
+  'Cupón',
 ];
 
 const sumPaymentsField = (payments, field) => (
@@ -57,6 +59,8 @@ export function transformOrderToRow(order) {
     order.shipping?.receiver_address?.city?.name || '',
     order.shipping?._state?.name || '',
     'ML',
+    order._fecha_factura || '',
+    toNumber(order._cupon),
   ];
 }
 
@@ -70,6 +74,8 @@ function mergePackOrders(orders) {
     order_items: orders.flatMap((o) => o.order_items || []),
     _iibb: orders.reduce((sum, o) => sum + toNumber(o._iibb), 0),
     _sirtac: orders.reduce((sum, o) => sum + toNumber(o._sirtac), 0),
+    _fecha_factura: orders.find((o) => o._fecha_factura)?._fecha_factura ?? undefined,
+    _cupon: orders.reduce((sum, o) => sum + toNumber(o._cupon), 0),
   };
 }
 

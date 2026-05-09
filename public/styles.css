@@ -271,7 +271,7 @@ td.edit-actions {
 /* ── Row states ── */
 
 .orders-table tbody tr.highlighted {
-  background: rgba(180, 140, 60, 0.15) !important;
+  background: rgba(162, 122, 42, 0.22) !important;
 }
 
 .orders-table tbody tr.manual-row {
@@ -283,6 +283,11 @@ td.edit-actions {
 
 .orders-table tbody tr.edit-row {
   background: var(--cream) !important;
+}
+
+.orders-table tbody tr.edit-row td.check-col {
+  width: auto;
+  min-width: 4.5rem;
 }
 
 /* ── Manual input cells ── */

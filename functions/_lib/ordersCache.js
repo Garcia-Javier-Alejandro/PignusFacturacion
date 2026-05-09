@@ -47,6 +47,8 @@ function slimOrder(order) {
     } : undefined,
     _iibb: order._iibb,
     _sirtac: order._sirtac,
+    _fecha_factura: order._fecha_factura,
+    _cupon: order._cupon,
   };
 }
 
