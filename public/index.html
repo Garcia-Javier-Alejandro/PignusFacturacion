@@ -26,6 +26,10 @@
         <button id="import-btn" type="button" class="btn btn--secondary">Import 2026 history ↓</button>
         <button id="export-btn" type="button" class="btn btn--secondary" disabled>Append new entries to Google Sheet</button>
         <button id="open-btn" type="button" class="btn btn--secondary" disabled>Open Sheet ↗</button>
+        <span class="toolbar-sep"></span>
+        <button id="edit-btn" type="button" class="btn btn--ghost" hidden>Editar fila</button>
+        <button id="delete-btn" type="button" class="btn btn--ghost btn--danger" hidden>Eliminar</button>
+        <button id="clear-cache-btn" type="button" class="btn btn--ghost btn--danger">Limpiar caché</button>
         <p id="status" class="status" aria-live="polite"></p>
       </div>
 
@@ -65,6 +69,7 @@
       const HISTORY_CUTOFF = new Date('2026-01-01T00:00:00');
       const MONEY_COLS = new Set(['Pago', 'Recargo MP', 'Retencion IIBB', 'Imp SIRTAC', 'Suma Impuestos', 'Costo Envio', 'Neto', 'Cupón']);
       const READONLY_COLS = new Set(['Suma Impuestos', 'Neto']);
+      const DATE_COLS = new Set(['Fecha Compra', 'Fecha Factura']);
 
       const ars = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' });
 
@@ -73,6 +78,12 @@
         const d = new Date(val);
         if (Number.isNaN(d.getTime())) return val;
         return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+      };
+
+      const toDateInputVal = (val) => {
+        if (!val) return '';
+        const d = new Date(val);
+        return Number.isNaN(d.getTime()) ? '' : d.toISOString().slice(0, 10);
       };
 
       const calcProgress = (oldestDateStr) => {
@@ -84,21 +95,22 @@
 
       const $ = (id) => document.getElementById(id);
 
-      const keyInput     = $('admin-key');
-      const fetchBtn     = $('fetch-btn');
-      const fetchLbl     = $('fetch-label');
-      const importBtn    = $('import-btn');
-      const addRowBtn    = $('add-row-btn');
-      const tableSection = $('table-section');
-      const table        = $('orders-table');
-      const exportBtn    = $('export-btn');
-      const openBtn      = $('open-btn');
-      const statusEl     = $('status');
-      const metaBar      = $('meta-bar');
-      const metaCount    = $('meta-count');
-      const metaOldest   = $('meta-oldest');
-      const progressFill = $('progress-fill');
-      const progressText = $('progress-text');
+      const keyInput      = $('admin-key');
+      const fetchBtn      = $('fetch-btn');
+      const fetchLbl      = $('fetch-label');
+      const importBtn     = $('import-btn');
+      const addRowBtn     = $('add-row-btn');
+      const editBtn       = $('edit-btn');
+      const deleteBtn     = $('delete-btn');
+      const clearCacheBtn = $('clear-cache-btn');
+      const table         = $('orders-table');
+      const exportBtn     = $('export-btn');
+      const openBtn       = $('open-btn');
+      const statusEl      = $('status');
+      const metaCount     = $('meta-count');
+      const metaOldest    = $('meta-oldest');
+      const progressFill  = $('progress-fill');
+      const progressText  = $('progress-text');
 
       keyInput.value = localStorage.getItem('pignus.adminApiKey') || '';
 
@@ -120,6 +132,21 @@
       // ── Checked rows state (survives re-renders) ──────────────────────────
       const checkedIds = new Set();
 
+      // ── Toolbar selection buttons ─────────────────────────────────────────
+      const updateToolbar = () => {
+        const count = checkedIds.size;
+        editBtn.hidden = count === 0;
+        deleteBtn.hidden = count === 0;
+        if (count > 1) {
+          editBtn.textContent = 'No se puede editar múltiples filas';
+          editBtn.disabled = true;
+        } else {
+          editBtn.textContent = 'Editar fila';
+          editBtn.disabled = false;
+        }
+        deleteBtn.textContent = count === 1 ? 'Eliminar fila' : `Eliminar ${count} filas`;
+      };
+
       const updateMeta = (meta) => {
         if (!meta) return;
         const pct = calcProgress(meta.oldest_date);
@@ -133,10 +160,17 @@
         }
       };
 
-      // ── Manual rows (localStorage) ────────────────────────────────────────
-      const MANUAL_KEY = 'pignus.manualRows';
-      const getManualRows = () => JSON.parse(localStorage.getItem(MANUAL_KEY) || '[]');
-      const saveManualRows = (rows) => localStorage.setItem(MANUAL_KEY, JSON.stringify(rows));
+      // ── localStorage helpers ──────────────────────────────────────────────
+      const MANUAL_KEY    = 'pignus.manualRows';
+      const HIDDEN_KEY    = 'pignus.hiddenIds';
+      const OVERRIDES_KEY = 'pignus.mlOverrides';
+
+      const getManualRows   = () => JSON.parse(localStorage.getItem(MANUAL_KEY) || '[]');
+      const saveManualRows  = (rows) => localStorage.setItem(MANUAL_KEY, JSON.stringify(rows));
+      const getHiddenIds    = () => new Set(JSON.parse(localStorage.getItem(HIDDEN_KEY) || '[]'));
+      const saveHiddenIds   = (set) => localStorage.setItem(HIDDEN_KEY, JSON.stringify([...set]));
+      const getMlOverrides  = () => JSON.parse(localStorage.getItem(OVERRIDES_KEY) || '{}');
+      const saveMlOverrides = (obj) => localStorage.setItem(OVERRIDES_KEY, JSON.stringify(obj));
 
       // ── Table rendering ───────────────────────────────────────────────────
       let lastHeaders = [];
@@ -162,9 +196,13 @@
 
         // ── tbody ──
         const tbody = document.createElement('tbody');
+        const hiddenIds = getHiddenIds();
+        const mlOverrides = getMlOverrides();
 
         const buildRow = (row, rowId, isManual) => {
+          const displayRow = (!isManual && mlOverrides[rowId]) ? mlOverrides[rowId] : row;
           const tr = document.createElement('tr');
+          tr.dataset.rowId = rowId;
           if (isManual) tr.classList.add('manual-row');
           if (checkedIds.has(rowId)) tr.classList.add('highlighted');
 
@@ -177,14 +215,15 @@
             if (checkbox.checked) checkedIds.add(rowId);
             else checkedIds.delete(rowId);
             tr.classList.toggle('highlighted', checkbox.checked);
+            updateToolbar();
           });
           checkTd.append(checkbox);
           tr.append(checkTd);
 
-          row.forEach((val, i) => {
+          displayRow.forEach((val, i) => {
             const td = document.createElement('td');
             const h = headers[i];
-            if (h === 'Fecha Compra' || h === 'Fecha Factura') {
+            if (DATE_COLS.has(h)) {
               td.textContent = formatDate(val);
             } else if (MONEY_COLS.has(h)) {
               td.textContent = ars.format(Number(val || 0));
@@ -211,39 +250,61 @@
             tbody.append(buildRow(row, `manual-${row[0]}-${row[1]}`, true));
           }
           for (const row of rows) {
-            tbody.append(buildRow(row, String(row[0]), false));
+            const rowId = String(row[0]);
+            if (hiddenIds.has(rowId)) continue;
+            tbody.append(buildRow(row, rowId, false));
           }
         }
 
         table.append(tbody);
       };
 
-      // ── Manual row entry ──────────────────────────────────────────────────
+      // ── Shared edit-row builder ───────────────────────────────────────────
       const recalcEditRow = (inputs) => {
-        const pago = Number(inputs['Pago']?.value || 0);
+        const pago    = Number(inputs['Pago']?.value || 0);
         const recargo = Number(inputs['Recargo MP']?.value || 0);
-        const iibb = Number(inputs['Retencion IIBB']?.value || 0);
-        const sirtac = Number(inputs['Imp SIRTAC']?.value || 0);
-        const envio = Number(inputs['Costo Envio']?.value || 0);
+        const iibb    = Number(inputs['Retencion IIBB']?.value || 0);
+        const sirtac  = Number(inputs['Imp SIRTAC']?.value || 0);
+        const envio   = Number(inputs['Costo Envio']?.value || 0);
         const suma = iibb + sirtac;
         const neto = pago - recargo - suma - envio;
         if (inputs['Suma Impuestos']) inputs['Suma Impuestos'].textContent = ars.format(suma);
-        if (inputs['Neto']) inputs['Neto'].textContent = ars.format(neto);
+        if (inputs['Neto'])          inputs['Neto'].textContent          = ars.format(neto);
         inputs['_sumaVal'] = suma;
         inputs['_netoVal'] = neto;
       };
 
-      addRowBtn.addEventListener('click', () => {
-        // Remove any existing edit row
-        table.querySelector('tr.edit-row')?.remove();
+      const buildEditInputs = (headers, initialValues = []) => {
+        const inputs = {};
+        for (const [i, h] of headers.entries()) {
+          if (READONLY_COLS.has(h)) {
+            const span = document.createElement('span');
+            span.className = 'num';
+            span.textContent = ars.format(Number(initialValues[i] ?? 0));
+            inputs[h] = span;
+          } else {
+            const isNum = MONEY_COLS.has(h);
+            const input = document.createElement('input');
+            input.type = isNum ? 'number' : (DATE_COLS.has(h) ? 'date' : 'text');
+            input.step = '0.01';
+            input.className = `manual-input${isNum ? ' num' : ''}`;
+            const val = initialValues[i];
+            if (val !== undefined && val !== null && val !== '') {
+              input.value = DATE_COLS.has(h) ? toDateInputVal(val) : val;
+            }
+            if (['Pago', 'Recargo MP', 'Retencion IIBB', 'Imp SIRTAC', 'Costo Envio'].includes(h)) {
+              input.addEventListener('input', () => recalcEditRow(inputs));
+            }
+            inputs[h] = input;
+          }
+        }
+        return inputs;
+      };
 
-        const headers = lastHeaders;
-        if (!headers.length) { setStatus('Cargá órdenes primero.', 'err'); return; }
-
+      const buildEditRow = (headers, initialValues, onSave, onCancel) => {
         const tr = document.createElement('tr');
         tr.className = 'edit-row';
 
-        // Checkbox cell with save/cancel
         const checkTd = document.createElement('td');
         checkTd.className = 'check-col edit-actions';
         const saveBtn = document.createElement('button');
@@ -254,33 +315,15 @@
         cancelBtn.textContent = '✗';
         cancelBtn.title = 'Cancelar';
         cancelBtn.className = 'btn btn--ghost btn--xs';
-        cancelBtn.addEventListener('click', () => tr.remove());
+        cancelBtn.addEventListener('click', onCancel);
         checkTd.append(saveBtn, cancelBtn);
         tr.append(checkTd);
 
-        const inputs = {};
+        const inputs = buildEditInputs(headers, initialValues);
         for (const h of headers) {
           const td = document.createElement('td');
-          if (READONLY_COLS.has(h)) {
-            const span = document.createElement('span');
-            span.className = 'num';
-            span.textContent = ars.format(0);
-            inputs[h] = span;
-            td.classList.add('num');
-            td.append(span);
-          } else {
-            const isNum = MONEY_COLS.has(h);
-            const input = document.createElement('input');
-            input.type = isNum ? 'number' : ((h === 'Fecha Compra' || h === 'Fecha Factura') ? 'date' : 'text');
-            input.step = '0.01';
-            input.className = `manual-input${isNum ? ' num' : ''}`;
-            if (h === 'Orígen') input.value = 'MANUAL';
-            if (['Pago', 'Recargo MP', 'Retencion IIBB', 'Imp SIRTAC', 'Costo Envio'].includes(h)) {
-              input.addEventListener('input', () => recalcEditRow(inputs));
-            }
-            inputs[h] = input;
-            td.append(input);
-          }
+          if (READONLY_COLS.has(h) || MONEY_COLS.has(h)) td.classList.add('num');
+          td.append(inputs[h]);
           tr.append(td);
         }
 
@@ -288,23 +331,130 @@
           recalcEditRow(inputs);
           const row = headers.map((h) => {
             if (h === 'Suma Impuestos') return inputs['_sumaVal'] ?? 0;
-            if (h === 'Neto') return inputs['_netoVal'] ?? 0;
+            if (h === 'Neto')          return inputs['_netoVal'] ?? 0;
             const el = inputs[h];
             const val = el?.value ?? '';
             return MONEY_COLS.has(h) ? Number(val || 0) : val;
           });
-          const existing = getManualRows();
-          existing.unshift(row);
-          saveManualRows(existing);
-          tr.remove();
-          // Re-render to show the new manual row
-          if (lastHeaders.length) renderTable({ headers: lastHeaders, rows: lastFetchedRows });
+          onSave(row);
         });
 
-        // Insert at top of tbody
+        return { tr, inputs };
+      };
+
+      // ── Add row ───────────────────────────────────────────────────────────
+      addRowBtn.addEventListener('click', () => {
+        table.querySelector('tr.edit-row')?.remove();
+        const headers = lastHeaders;
+        if (!headers.length) { setStatus('Cargá órdenes primero.', 'err'); return; }
+
+        const defaults = headers.map((h) => h === 'Orígen' ? 'MANUAL' : '');
+        const { tr, inputs } = buildEditRow(
+          headers, defaults,
+          (row) => {
+            const existing = getManualRows();
+            existing.unshift(row);
+            saveManualRows(existing);
+            tr.remove();
+            renderTable({ headers: lastHeaders, rows: lastFetchedRows });
+          },
+          () => tr.remove(),
+        );
+
         const tbody = table.querySelector('tbody') || table.appendChild(document.createElement('tbody'));
         tbody.insertBefore(tr, tbody.firstChild);
         inputs[headers[0]]?.focus?.();
+      });
+
+      // ── Edit selected row ─────────────────────────────────────────────────
+      editBtn.addEventListener('click', () => {
+        if (checkedIds.size !== 1) return;
+        const [rowId] = checkedIds;
+        const isManual = rowId.startsWith('manual-');
+
+        if (!isManual && !confirm('Estás por editar una fila cuyos datos se originaron en Mercado Libre. ¿Continuar?')) return;
+
+        const targetTr = [...table.querySelectorAll('tr[data-row-id]')]
+          .find((tr) => tr.dataset.rowId === rowId);
+        if (!targetTr) return;
+
+        let currentValues;
+        if (isManual) {
+          currentValues = getManualRows().find((r) => `manual-${r[0]}-${r[1]}` === rowId) || [];
+        } else {
+          const overrides = getMlOverrides();
+          currentValues = overrides[rowId] || lastFetchedRows.find((r) => String(r[0]) === rowId) || [];
+        }
+
+        table.querySelector('tr.edit-row')?.remove();
+
+        const { tr: editTr, inputs } = buildEditRow(
+          lastHeaders, currentValues,
+          (row) => {
+            if (isManual) {
+              const rows = getManualRows();
+              const idx = rows.findIndex((r) => `manual-${r[0]}-${r[1]}` === rowId);
+              if (idx !== -1) { rows[idx] = row; saveManualRows(rows); }
+            } else {
+              const overrides = getMlOverrides();
+              overrides[rowId] = row;
+              saveMlOverrides(overrides);
+            }
+            checkedIds.delete(rowId);
+            updateToolbar();
+            renderTable({ headers: lastHeaders, rows: lastFetchedRows });
+          },
+          () => editTr.remove(),
+        );
+
+        targetTr.replaceWith(editTr);
+        inputs[lastHeaders[0]]?.focus?.();
+      });
+
+      // ── Delete selected rows ──────────────────────────────────────────────
+      deleteBtn.addEventListener('click', () => {
+        const count = checkedIds.size;
+        if (!confirm(`¿Eliminar ${count} fila${count !== 1 ? 's' : ''}? Esta acción no se puede deshacer.`)) return;
+
+        const hiddenIds = getHiddenIds();
+        let manualRows = getManualRows();
+
+        for (const rowId of checkedIds) {
+          if (rowId.startsWith('manual-')) {
+            manualRows = manualRows.filter((r) => `manual-${r[0]}-${r[1]}` !== rowId);
+          } else {
+            hiddenIds.add(rowId);
+          }
+        }
+
+        saveManualRows(manualRows);
+        saveHiddenIds(hiddenIds);
+        checkedIds.clear();
+        updateToolbar();
+        renderTable({ headers: lastHeaders, rows: lastFetchedRows });
+      });
+
+      // ── Clear server cache ────────────────────────────────────────────────
+      clearCacheBtn.addEventListener('click', async () => {
+        if (!confirm('¿Limpiar toda la caché de órdenes? Deberás reimportar el historial completo desde 01/01/2026.')) return;
+        try {
+          const res = await fetch('/api/orders/cache', { method: 'DELETE', headers: authHeader() });
+          if (!res.ok) throw new Error('Error al limpiar caché');
+          localStorage.removeItem(HIDDEN_KEY);
+          localStorage.removeItem(OVERRIDES_KEY);
+          lastFetchedRows = [];
+          lastHeaders = [];
+          checkedIds.clear();
+          updateToolbar();
+          table.innerHTML = '';
+          importBtn.textContent = 'Import 2026 history ↓';
+          importBtn.disabled = false;
+          exportBtn.disabled = true;
+          openBtn.disabled = true;
+          setStatus('Caché limpiada. Reimportá el historial.', 'ok');
+        } catch (err) {
+          setStatus(err.message, 'err');
+        }
       });
 
       let lastFetchedRows = [];

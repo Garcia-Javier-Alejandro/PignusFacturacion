@@ -2,6 +2,13 @@ import { json, requireAdmin } from '../../_lib/http.js';
 import { getOrdersCache, isCacheDone } from '../../_lib/ordersCache.js';
 import { OUTPUT_HEADERS, transformOrdersToRows } from '../../_lib/transform.js';
 
+export async function onRequestDelete({ request, env }) {
+  const authError = await requireAdmin(request, env);
+  if (authError) return authError;
+  await env.PIGNUS_TOKENS.delete('orders_cache');
+  return json({ ok: true });
+}
+
 export async function onRequestGet({ request, env }) {
   const authError = await requireAdmin(request, env);
   if (authError) return authError;

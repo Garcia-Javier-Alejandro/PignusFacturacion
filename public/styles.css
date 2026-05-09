@@ -109,6 +109,18 @@ input[type="password"]:focus { border-color: var(--border-mid); }
   padding: 0.2rem 0.45rem;
 }
 
+.btn--danger {
+  color: var(--err);
+  border-color: currentColor;
+}
+.btn--danger:hover:not(:disabled) { background: rgba(194, 59, 34, 0.06); }
+
+/* ── Toolbar separator ── */
+
+.toolbar-sep {
+  flex: 1;
+}
+
 /* ── Layout ── */
 
 .main {
