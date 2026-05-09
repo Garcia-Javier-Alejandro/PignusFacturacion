@@ -33,7 +33,7 @@ export async function onRequestGet({ env, request }) {
 
   const cache = await getOrdersCache(env);
 
-  const needsEnrich = (o) => o._fecha_factura == null || o._cupon === undefined;
+  const needsEnrich = (o) => o._fecha_factura === undefined || o._cupon === undefined;
   const toEnrich = cache.orders.filter(needsEnrich).slice(0, BATCH);
 
   if (toEnrich.length > 0) {
