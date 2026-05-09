@@ -81,7 +81,7 @@
       const DATE_COLS = new Set(['Fecha Compra', 'Fecha Factura']);
 
       const COLLAPSED_COLS = ['Nombre', 'Fecha Factura', 'Pago', 'Cupón', 'Suma Impuestos', 'Costo Envio', 'Neto', 'Provincia'];
-      const EXPANDED_COLS  = ['Nombre', 'Fecha Compra', 'Fecha Factura', 'Pago', 'Cupón', 'Retencion IIBB', 'Imp SIRTAC', 'Suma Impuestos', 'Costo Envio', 'Neto', 'Provincia', 'Localidad', 'Orígen'];
+      const EXPANDED_COLS  = ['Orden ID', 'Nombre', 'Fecha Compra', 'Fecha Factura', 'Pago', 'Cupón', 'Retencion IIBB', 'Imp SIRTAC', 'Suma Impuestos', 'Costo Envio', 'Neto', 'Provincia', 'Localidad', 'Orígen'];
 
       let isExpanded = false;
       const getVisibleCols = (headers) => (isExpanded ? EXPANDED_COLS : COLLAPSED_COLS)
