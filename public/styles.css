@@ -130,6 +130,14 @@ input[type="password"]:focus { border-color: var(--border-mid); }
   margin-bottom: 1.25rem;
 }
 
+.toolbar-left,
+.toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
 /* ── Status ── */
 
 .status {

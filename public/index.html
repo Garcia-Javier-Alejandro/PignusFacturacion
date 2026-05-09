@@ -20,16 +20,20 @@
 
     <main class="main">
       <div class="toolbar">
+        <div class="toolbar-left">
+          <button id="add-row-btn" type="button" class="btn btn--primary">+ Agregar fila</button>
+          <button id="edit-btn" type="button" class="btn btn--ghost" disabled>✏ Editar</button>
+          <button id="delete-btn" type="button" class="btn btn--ghost btn--danger" disabled>🗑 Eliminar</button>
+        </div>
         <p id="status" class="status" aria-live="polite"></p>
-        <button id="fetch-btn" type="button" class="btn btn--primary">
-          <span id="fetch-label">Fetch last 20 orders</span>
-        </button>
-        <button id="import-btn" type="button" class="btn btn--secondary">Import 2026 history ↓</button>
-        <button id="export-btn" type="button" class="btn btn--secondary" disabled>Append new entries to Google Sheet</button>
-        <button id="open-btn" type="button" class="btn btn--secondary" disabled>Open Sheet ↗</button>
-        <button id="add-row-btn" type="button" class="btn btn--primary">+ Agregar fila</button>
-        <button id="edit-btn" type="button" class="btn btn--ghost" disabled>Editar fila</button>
-        <button id="delete-btn" type="button" class="btn btn--ghost btn--danger" disabled>Eliminar fila</button>
+        <div class="toolbar-right">
+          <button id="fetch-btn" type="button" class="btn btn--primary">
+            <span id="fetch-label">Cargar últimos pedidos</span>
+          </button>
+          <button id="import-btn" type="button" class="btn btn--secondary">Import 2026 history ↓</button>
+          <button id="export-btn" type="button" class="btn btn--secondary" disabled>Añadir a Sheets</button>
+          <button id="open-btn" type="button" class="btn btn--secondary" disabled>↗ Abrir Sheets</button>
+        </div>
       </div>
 
       <div class="meta-bar" id="meta-bar">
@@ -130,14 +134,9 @@
       const updateToolbar = () => {
         const count = checkedIds.size;
         deleteBtn.disabled = count === 0;
-        if (count > 1) {
-          editBtn.textContent = 'No se puede editar múltiples filas';
-          editBtn.disabled = true;
-        } else {
-          editBtn.textContent = 'Editar fila';
-          editBtn.disabled = count === 0;
-        }
-        deleteBtn.textContent = count <= 1 ? 'Eliminar fila' : `Eliminar ${count} filas`;
+        editBtn.disabled = count !== 1;
+        editBtn.textContent = count > 1 ? '✏ No se puede editar múltiples filas' : '✏ Editar';
+        deleteBtn.textContent = '🗑 Eliminar';
       };
 
       const updateMeta = (meta) => {
