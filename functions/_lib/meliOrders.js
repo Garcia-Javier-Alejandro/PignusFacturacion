@@ -97,14 +97,18 @@ export async function fetchOrdersAtOffset(env, offset, count = 20) {
   const tokens = await getValidAccessToken(env);
   const sellerId = tokens.seller_id || env.MELI_SELLER_ID;
   const total = await probeTotal(sellerId, tokens.access_token);
-  const clampedOffset = Math.max(0, Math.min(offset, total - 1));
+  // null means first import with no prior fetch — start from the most recent page
+  const targetOffset = offset === null
+    ? Math.max(0, total - count)
+    : Math.max(0, total > 0 ? Math.min(offset, total - 1) : offset);
   const response = await requestOrders(
-    { seller: sellerId, limit: String(count), offset: String(clampedOffset) },
+    { seller: sellerId, limit: String(count), offset: String(targetOffset) },
     tokens.access_token,
   );
   const data = await response.json();
   if (!response.ok) throw new Error(data.message || data.error || 'Mercado Libre orders request failed');
-  return { orders: (data.results || []).filter(isPaidOrder), total, fetchedOffset: clampedOffset };
+  const realTotal = data.paging?.total ?? total;
+  return { orders: (data.results || []).filter(isPaidOrder), total: realTotal, fetchedOffset: targetOffset };
 }
 
 const ENRICH_LIMIT = 20;

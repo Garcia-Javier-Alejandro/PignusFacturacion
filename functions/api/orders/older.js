@@ -27,7 +27,7 @@ export async function onRequestGet({ request, env }) {
       });
     }
 
-    const offset = cache.next_older_offset ?? 0;
+    const offset = cache.next_older_offset; // null on fresh cache → fetchOrdersAtOffset starts from most recent
     const { orders, total, fetchedOffset } = await fetchOrdersAtOffset(env, offset, 20);
     const result = await fetchEnrichAndStore(env, { orders, total, fetchedOffset, isOlderFetch: true });
     return json(result);
