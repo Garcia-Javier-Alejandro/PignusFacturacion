@@ -192,28 +192,34 @@ export async function fetchCouponAmount(orderId, accessToken) {
   return total;
 }
 
+const BILLING_BATCH = 10;
+
 export async function fetchBillingTaxes(orders, env) {
   const tokens = await getValidAccessToken(env);
-  const orderIds = orders.map((o) => o.id).join(',');
-  const res = await fetch(
-    `https://api.mercadolibre.com/billing/integration/group/ML/order/details?order_ids=${orderIds}`,
-    { headers: { accept: 'application/json', authorization: `Bearer ${tokens.access_token}` } },
-  );
-  const data = await res.json();
-  if (!res.ok) return new Map();
   const taxes = new Map();
-  for (const item of data.results || []) {
-    let iibb = 0;
-    let sirtac = 0;
-    for (const payment of item.payment_info || []) {
-      for (const tax of payment.tax_details || []) {
-        const detail = (tax.mov_detail || '').toLowerCase();
-        const entity = (tax.mov_financial_entity || '').toLowerCase();
-        if (detail.includes('sirtac')) sirtac += Number(tax.original_amount || 0);
-        else if (detail.includes('iibb') || entity.includes('iibb')) iibb += Number(tax.original_amount || 0);
+
+  for (let i = 0; i < orders.length; i += BILLING_BATCH) {
+    const batch = orders.slice(i, i + BILLING_BATCH);
+    const orderIds = batch.map((o) => o.id).join(',');
+    const res = await fetch(
+      `https://api.mercadolibre.com/billing/integration/group/ML/order/details?order_ids=${orderIds}`,
+      { headers: { accept: 'application/json', authorization: `Bearer ${tokens.access_token}` } },
+    );
+    if (!res.ok) continue;
+    const data = await res.json();
+    for (const item of data.results || []) {
+      let iibb = 0;
+      let sirtac = 0;
+      for (const payment of item.payment_info || []) {
+        for (const tax of payment.tax_details || []) {
+          const detail = (tax.mov_detail || '').toLowerCase();
+          const entity = (tax.mov_financial_entity || '').toLowerCase();
+          if (detail.includes('sirtac')) sirtac += Number(tax.original_amount || 0);
+          else if (detail.includes('iibb') || entity.includes('iibb')) iibb += Number(tax.original_amount || 0);
+        }
       }
+      taxes.set(String(item.order_id), { iibb, sirtac });
     }
-    taxes.set(String(item.order_id), { iibb, sirtac });
   }
   return taxes;
 }

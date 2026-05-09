@@ -10,6 +10,29 @@ export async function onRequestGet({ env, request }) {
   const err = await requireAdmin(request, env);
   if (err) return err;
 
+  // Debug: ?probe_fiscal=ORDER_ID returns raw fiscal_documents API responses for that order
+  const probeId = new URL(request.url).searchParams.get('probe_fiscal');
+  if (probeId) {
+    const tokens = await getValidAccessToken(env);
+    const { access_token } = tokens;
+    const sellerId = tokens.seller_id || env.MELI_SELLER_ID || null;
+    const cache = await getOrdersCache(env);
+    const order = cache.orders.find((o) => String(o.id) === String(probeId));
+    const packId = order?.pack_id ? String(order.pack_id) : null;
+    const paths = [];
+    if (packId) paths.push(`packs/${packId}/fiscal_documents`);
+    if (sellerId) paths.push(`users/${sellerId}/invoices/orders/${probeId}`);
+    paths.push(`orders/${probeId}/fiscal_documents`);
+    const results = {};
+    for (const path of paths) {
+      const res = await fetch(`https://api.mercadolibre.com/${path}`, {
+        headers: { accept: 'application/json', authorization: `Bearer ${access_token}` },
+      });
+      results[path] = { status: res.status, body: await res.json().catch(() => null) };
+    }
+    return json({ probe: probeId, packId, sellerId, results });
+  }
+
   const cache = await getOrdersCache(env);
 
   const needsEnrich = (o) => o._fecha_factura === undefined || o._cupon === undefined;
