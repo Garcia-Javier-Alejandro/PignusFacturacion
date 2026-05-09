@@ -4,7 +4,7 @@ import { getValidAccessToken } from '../../_lib/meliAuth.js';
 import { fetchFiscalDate, fetchCouponAmount } from '../../_lib/meliOrders.js';
 import { OUTPUT_HEADERS, transformOrdersToRows } from '../../_lib/transform.js';
 
-const BATCH = 8;
+const BATCH = 20;
 
 export async function onRequestGet({ env, request }) {
   const err = await requireAdmin(request, env);
