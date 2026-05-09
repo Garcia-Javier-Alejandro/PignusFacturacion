@@ -26,6 +26,7 @@
         <button id="import-btn" type="button" class="btn btn--secondary">Import 2026 history ↓</button>
         <button id="export-btn" type="button" class="btn btn--secondary" disabled>Append new entries to Google Sheet</button>
         <button id="open-btn" type="button" class="btn btn--secondary" disabled>Open Sheet ↗</button>
+        <button id="add-row-btn" type="button" class="btn btn--primary">+ Agregar fila</button>
         <span class="toolbar-sep"></span>
         <button id="edit-btn" type="button" class="btn btn--ghost" hidden>Editar fila</button>
         <button id="delete-btn" type="button" class="btn btn--ghost btn--danger" hidden>Eliminar</button>
@@ -43,10 +44,6 @@
           <span id="progress-text">0%</span>
           <span class="progress-label">de 2026</span>
         </div>
-      </div>
-
-      <div class="add-row-bar">
-        <button id="add-row-btn" type="button" class="btn btn--primary">+ Agregar fila</button>
       </div>
 
       <section id="table-section">
@@ -177,6 +174,14 @@
 
       const renderTable = ({ headers, rows }) => {
         lastHeaders = headers;
+
+        // Prune checkedIds so deleted rows can't remain "selected"
+        const validIds = new Set();
+        for (const r of getManualRows()) validIds.add(`manual-${r[0]}-${r[1]}`);
+        const _hidden = getHiddenIds();
+        for (const r of rows) { const id = String(r[0]); if (!_hidden.has(id)) validIds.add(id); }
+        for (const id of [...checkedIds]) { if (!validIds.has(id)) checkedIds.delete(id); }
+
         table.innerHTML = '';
 
         // ── thead ──
@@ -257,6 +262,7 @@
         }
 
         table.append(tbody);
+        updateToolbar();
       };
 
       // ── Shared edit-row builder ───────────────────────────────────────────

@@ -145,12 +145,6 @@ input[type="password"]:focus { border-color: var(--border-mid); }
 .status--ok  { color: var(--ok); }
 .status--err { color: var(--err); }
 
-/* ── Add-row bar ── */
-
-.add-row-bar {
-  margin-bottom: 0.5rem;
-}
-
 /* ── Meta bar ── */
 
 .meta-bar {
