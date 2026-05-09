@@ -120,11 +120,19 @@ export async function enrichOrders(orders, env) {
     const shippingId = fullOrder.shipping?.id ?? order.shipping?.id;
     if (shippingId) {
       const shipRes = await fetch(`https://api.mercadolibre.com/shipments/${shippingId}`, {
-        headers: { accept: 'application/json', authorization: `Bearer ${tokens.access_token}` },
+        headers: {
+          accept: 'application/json',
+          authorization: `Bearer ${tokens.access_token}`,
+          'x-format-new': 'true',
+        },
       });
       if (shipRes.ok) {
         const shipData = await shipRes.json();
-        fullOrder.shipping = { ...fullOrder.shipping, receiver_address: shipData.receiver_address };
+        fullOrder.shipping = {
+          ...fullOrder.shipping,
+          receiver_address: shipData.receiver_address,
+          _state: shipData.destination?.shipping_address?.state,
+        };
       }
     }
     enriched.push(fullOrder);

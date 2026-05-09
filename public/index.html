@@ -41,6 +41,10 @@
         </div>
       </div>
 
+      <div class="add-row-bar">
+        <button id="add-row-btn" type="button" class="btn btn--ghost">+ Agregar fila manual</button>
+      </div>
+
       <section id="table-section">
         <div class="table-wrap">
           <table id="orders-table" class="orders-table"></table>
@@ -59,7 +63,8 @@
     <script>
       const SHEET_URL = 'https://docs.google.com/spreadsheets/d/1Z6Z8UBOw8gkz77oz8M3L7CXlxt5ar146A3-n9EJLEDw';
       const HISTORY_CUTOFF = new Date('2026-01-01T00:00:00');
-      const MONEY_COLS = new Set(['Pago', 'Recargo MP', 'Retencion IIBB', 'Imp SIRTAC', 'Costo Envio', 'Neto']);
+      const MONEY_COLS = new Set(['Pago', 'Recargo MP', 'Retencion IIBB', 'Imp SIRTAC', 'Suma Impuestos', 'Costo Envio', 'Neto']);
+      const READONLY_COLS = new Set(['Suma Impuestos', 'Neto']);
 
       const ars = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' });
 
@@ -74,9 +79,7 @@
         if (!oldestDateStr) return 0;
         const oldest = new Date(oldestDateStr);
         const now = new Date();
-        const total = now - HISTORY_CUTOFF;
-        const covered = now - oldest;
-        return Math.min(100, Math.max(0, Math.round((covered / total) * 100)));
+        return Math.min(100, Math.max(0, Math.round(((now - oldest) / (now - HISTORY_CUTOFF)) * 100)));
       };
 
       const $ = (id) => document.getElementById(id);
@@ -85,6 +88,7 @@
       const fetchBtn     = $('fetch-btn');
       const fetchLbl     = $('fetch-label');
       const importBtn    = $('import-btn');
+      const addRowBtn    = $('add-row-btn');
       const tableSection = $('table-section');
       const table        = $('orders-table');
       const exportBtn    = $('export-btn');
@@ -113,6 +117,9 @@
         setStatus('Key saved.', 'ok');
       });
 
+      // ── Checked rows state (survives re-renders) ──────────────────────────
+      const checkedIds = new Set();
+
       const updateMeta = (meta) => {
         if (!meta) return;
         const pct = calcProgress(meta.oldest_date);
@@ -126,11 +133,24 @@
         }
       };
 
+      // ── Manual rows (localStorage) ────────────────────────────────────────
+      const MANUAL_KEY = 'pignus.manualRows';
+      const getManualRows = () => JSON.parse(localStorage.getItem(MANUAL_KEY) || '[]');
+      const saveManualRows = (rows) => localStorage.setItem(MANUAL_KEY, JSON.stringify(rows));
+
+      // ── Table rendering ───────────────────────────────────────────────────
+      let lastHeaders = [];
+
       const renderTable = ({ headers, rows }) => {
+        lastHeaders = headers;
         table.innerHTML = '';
 
+        // ── thead ──
         const thead = document.createElement('thead');
         const headRow = document.createElement('tr');
+        const checkTh = document.createElement('th');
+        checkTh.className = 'check-col';
+        headRow.append(checkTh);
         for (const h of headers) {
           const th = document.createElement('th');
           th.textContent = h;
@@ -140,49 +160,169 @@
         thead.append(headRow);
         table.append(thead);
 
+        // ── tbody ──
         const tbody = document.createElement('tbody');
-        if (rows.length === 0) {
+
+        const buildRow = (row, rowId, isManual) => {
+          const tr = document.createElement('tr');
+          if (isManual) tr.classList.add('manual-row');
+          if (checkedIds.has(rowId)) tr.classList.add('highlighted');
+
+          const checkTd = document.createElement('td');
+          checkTd.className = 'check-col';
+          const checkbox = document.createElement('input');
+          checkbox.type = 'checkbox';
+          checkbox.checked = checkedIds.has(rowId);
+          checkbox.addEventListener('change', () => {
+            if (checkbox.checked) checkedIds.add(rowId);
+            else checkedIds.delete(rowId);
+            tr.classList.toggle('highlighted', checkbox.checked);
+          });
+          checkTd.append(checkbox);
+          tr.append(checkTd);
+
+          row.forEach((val, i) => {
+            const td = document.createElement('td');
+            const h = headers[i];
+            if (h === 'Fecha Compra') {
+              td.textContent = formatDate(val);
+            } else if (MONEY_COLS.has(h)) {
+              td.textContent = ars.format(Number(val || 0));
+              td.classList.add('num');
+            } else {
+              td.textContent = val ?? '';
+            }
+            tr.append(td);
+          });
+          return tr;
+        };
+
+        const manualRows = getManualRows();
+        if (manualRows.length === 0 && rows.length === 0) {
           const tr = document.createElement('tr');
           const td = document.createElement('td');
-          td.colSpan = headers.length;
+          td.colSpan = headers.length + 1;
           td.className = 'empty';
           td.textContent = 'No orders found.';
           tr.append(td);
           tbody.append(tr);
         } else {
+          for (const row of manualRows) {
+            tbody.append(buildRow(row, `manual-${row[0]}-${row[1]}`, true));
+          }
           for (const row of rows) {
-            const tr = document.createElement('tr');
-            row.forEach((val, i) => {
-              const td = document.createElement('td');
-              const h = headers[i];
-              if (h === 'Fecha') {
-                td.textContent = formatDate(val);
-              } else if (MONEY_COLS.has(h)) {
-                td.textContent = ars.format(Number(val || 0));
-                td.classList.add('num');
-              } else {
-                td.textContent = val ?? '';
-              }
-              tr.append(td);
-            });
-            tbody.append(tr);
+            tbody.append(buildRow(row, String(row[0]), false));
           }
         }
+
         table.append(tbody);
+      };
+
+      // ── Manual row entry ──────────────────────────────────────────────────
+      const recalcEditRow = (inputs) => {
+        const pago = Number(inputs['Pago']?.value || 0);
+        const recargo = Number(inputs['Recargo MP']?.value || 0);
+        const iibb = Number(inputs['Retencion IIBB']?.value || 0);
+        const sirtac = Number(inputs['Imp SIRTAC']?.value || 0);
+        const envio = Number(inputs['Costo Envio']?.value || 0);
+        const suma = iibb + sirtac;
+        const neto = pago - recargo - suma - envio;
+        if (inputs['Suma Impuestos']) inputs['Suma Impuestos'].textContent = ars.format(suma);
+        if (inputs['Neto']) inputs['Neto'].textContent = ars.format(neto);
+        inputs['_sumaVal'] = suma;
+        inputs['_netoVal'] = neto;
+      };
+
+      addRowBtn.addEventListener('click', () => {
+        // Remove any existing edit row
+        table.querySelector('tr.edit-row')?.remove();
+
+        const headers = lastHeaders;
+        if (!headers.length) { setStatus('Cargá órdenes primero.', 'err'); return; }
+
+        const tr = document.createElement('tr');
+        tr.className = 'edit-row';
+
+        // Checkbox cell with save/cancel
+        const checkTd = document.createElement('td');
+        checkTd.className = 'check-col edit-actions';
+        const saveBtn = document.createElement('button');
+        saveBtn.textContent = '✓';
+        saveBtn.title = 'Guardar';
+        saveBtn.className = 'btn btn--ghost btn--xs';
+        const cancelBtn = document.createElement('button');
+        cancelBtn.textContent = '✗';
+        cancelBtn.title = 'Cancelar';
+        cancelBtn.className = 'btn btn--ghost btn--xs';
+        cancelBtn.addEventListener('click', () => tr.remove());
+        checkTd.append(saveBtn, cancelBtn);
+        tr.append(checkTd);
+
+        const inputs = {};
+        for (const h of headers) {
+          const td = document.createElement('td');
+          if (READONLY_COLS.has(h)) {
+            const span = document.createElement('span');
+            span.className = 'num';
+            span.textContent = ars.format(0);
+            inputs[h] = span;
+            td.classList.add('num');
+            td.append(span);
+          } else {
+            const isNum = MONEY_COLS.has(h);
+            const input = document.createElement('input');
+            input.type = isNum ? 'number' : (h === 'Fecha Compra' ? 'date' : 'text');
+            input.step = '0.01';
+            input.className = `manual-input${isNum ? ' num' : ''}`;
+            if (h === 'Orígen') input.value = 'MANUAL';
+            if (['Pago', 'Recargo MP', 'Retencion IIBB', 'Imp SIRTAC', 'Costo Envio'].includes(h)) {
+              input.addEventListener('input', () => recalcEditRow(inputs));
+            }
+            inputs[h] = input;
+            td.append(input);
+          }
+          tr.append(td);
+        }
+
+        saveBtn.addEventListener('click', () => {
+          recalcEditRow(inputs);
+          const row = headers.map((h) => {
+            if (h === 'Suma Impuestos') return inputs['_sumaVal'] ?? 0;
+            if (h === 'Neto') return inputs['_netoVal'] ?? 0;
+            const el = inputs[h];
+            const val = el?.value ?? '';
+            return MONEY_COLS.has(h) ? Number(val || 0) : val;
+          });
+          const existing = getManualRows();
+          existing.unshift(row);
+          saveManualRows(existing);
+          tr.remove();
+          // Re-render to show the new manual row
+          if (lastHeaders.length) renderTable({ headers: lastHeaders, rows: lastFetchedRows });
+        });
+
+        // Insert at top of tbody
+        const tbody = table.querySelector('tbody') || table.appendChild(document.createElement('tbody'));
+        tbody.insertBefore(tr, tbody.firstChild);
+        inputs[headers[0]]?.focus?.();
+      });
+
+      let lastFetchedRows = [];
+
+      // ── Data loading helpers ──────────────────────────────────────────────
+      const applyData = (data) => {
+        lastFetchedRows = data.rows || [];
+        renderTable(data);
+        exportBtn.disabled = false;
+        openBtn.disabled = false;
+        updateMeta(data.meta);
       };
 
       // Load cache on page load if key is already saved
       if (localStorage.getItem('pignus.adminApiKey')) {
         fetch('/api/orders/cache', { headers: authHeader() })
           .then((r) => r.json())
-          .then((data) => {
-            if (data.headers) {
-              renderTable(data);
-              exportBtn.disabled = false;
-              openBtn.disabled = false;
-              updateMeta(data.meta);
-            }
-          })
+          .then((data) => { if (data.headers) applyData(data); })
           .catch(() => {});
       }
 
@@ -190,15 +330,11 @@
         fetchBtn.disabled = true;
         fetchLbl.textContent = 'Fetching…';
         setStatus('Loading orders…');
-
         try {
           const res = await fetch('/api/orders/recent', { headers: authHeader() });
           const data = await res.json();
           if (!res.ok) throw new Error(data.error || 'Request failed.');
-          renderTable(data);
-          exportBtn.disabled = false;
-          openBtn.disabled = false;
-          updateMeta(data.meta);
+          applyData(data);
           const n = data.meta?.loaded ?? data.rows.length;
           setStatus(`${n} order${n !== 1 ? 's' : ''} loaded.`, 'ok');
         } catch (err) {
@@ -218,7 +354,6 @@
           setStatus('Import stopped.', '');
           return;
         }
-
         importRunning = true;
         importBtn.textContent = 'Detener ✕';
         setStatus('Importing history…');
@@ -228,11 +363,8 @@
             const res = await fetch('/api/orders/older', { headers: authHeader() });
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || 'Error loading older orders.');
-            renderTable(data);
-            exportBtn.disabled = false;
-            openBtn.disabled = false;
-            updateMeta(data.meta);
-            setStatus(`Importing… ${data.meta.loaded} orders — oldest: ${formatDate(data.meta.oldest_date)}`);
+            applyData(data);
+            setStatus(`Importando… ${data.meta.loaded} orders — oldest: ${formatDate(data.meta.oldest_date)}`);
             if (data.meta.done) {
               setStatus('Historia importada hasta 01/01/2026.', 'ok');
               importRunning = false;
@@ -265,7 +397,6 @@
       });
 
       openBtn.addEventListener('click', () => window.open(SHEET_URL, '_blank'));
-
       $('auth-btn').addEventListener('click', () => { window.location.href = '/api/meli/login'; });
     </script>
   </body>

@@ -43,6 +43,7 @@ function slimOrder(order) {
       receiver_address: order.shipping.receiver_address ? {
         city: order.shipping.receiver_address.city,
       } : undefined,
+      _state: order.shipping._state,
     } : undefined,
     _iibb: order._iibb,
     _sirtac: order._sirtac,

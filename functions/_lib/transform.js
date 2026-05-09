@@ -2,15 +2,18 @@ const toNumber = (value) => Number(value || 0);
 
 export const OUTPUT_HEADERS = [
   'Orden ID',
-  'Fecha',
+  'Fecha Compra',
   'Nombre',
   'Pago',
   'Recargo MP',
   'Retencion IIBB',
   'Imp SIRTAC',
+  'Suma Impuestos',
   'Costo Envio',
   'Neto',
   'Localidad',
+  'Provincia',
+  'Orígen',
 ];
 
 const sumPaymentsField = (payments, field) => (
@@ -23,7 +26,6 @@ const calculateProductRevenue = (order, payments) => {
     const unitPrice = toNumber(item.unit_price ?? item.full_unit_price);
     return total + quantity * unitPrice;
   }, 0);
-
   return productsTotal || sumPaymentsField(payments, 'transaction_amount') || sumPaymentsField(payments, 'total_paid_amount');
 };
 
@@ -37,6 +39,7 @@ export function transformOrderToRow(order) {
   const recargoMp = calculateMercadoPagoFee(order);
   const retencionIibb = toNumber(order._iibb);
   const impSirtac = toNumber(order._sirtac);
+  const sumaImpuestos = retencionIibb + impSirtac;
   const costoEnvio = sumPaymentsField(payments, 'shipping_cost') || toNumber(order.shipping?.cost);
   const neto = pago - (recargoMp + retencionIibb + impSirtac + costoEnvio);
 
@@ -48,9 +51,12 @@ export function transformOrderToRow(order) {
     recargoMp,
     retencionIibb,
     impSirtac,
+    sumaImpuestos,
     costoEnvio,
     neto,
     order.shipping?.receiver_address?.city?.name || '',
+    order.shipping?._state?.name || '',
+    'ML',
   ];
 }
 

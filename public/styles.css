@@ -104,10 +104,15 @@ input[type="password"]:focus { border-color: var(--border-mid); }
 }
 .btn--ghost:hover:not(:disabled) { border-color: var(--border-mid); color: var(--ink); }
 
+.btn--xs {
+  font-size: 0.65rem;
+  padding: 0.2rem 0.45rem;
+}
+
 /* ── Layout ── */
 
 .main {
-  padding: 1.5rem 2rem;
+  padding: 1.5rem 5vw;
 }
 
 .toolbar {
@@ -127,6 +132,12 @@ input[type="password"]:focus { border-color: var(--border-mid); }
 }
 .status--ok  { color: var(--ok); }
 .status--err { color: var(--err); }
+
+/* ── Add-row bar ── */
+
+.add-row-bar {
+  margin-bottom: 0.5rem;
+}
 
 /* ── Meta bar ── */
 
@@ -239,6 +250,57 @@ input[type="password"]:focus { border-color: var(--border-mid); }
   color: var(--ink-3);
   white-space: normal;
 }
+
+/* ── Checkbox column ── */
+
+.orders-table th.check-col,
+.orders-table td.check-col {
+  width: 2rem;
+  min-width: 2rem;
+  padding: 0.4rem 0.5rem;
+  text-align: center;
+}
+
+td.edit-actions {
+  display: flex;
+  gap: 0.25rem;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── Row states ── */
+
+.orders-table tbody tr.highlighted {
+  background: rgba(180, 140, 60, 0.15) !important;
+}
+
+.orders-table tbody tr.manual-row {
+  background: rgba(30, 130, 60, 0.06) !important;
+}
+.orders-table tbody tr.manual-row:hover {
+  background: rgba(30, 130, 60, 0.12) !important;
+}
+
+.orders-table tbody tr.edit-row {
+  background: var(--cream) !important;
+}
+
+/* ── Manual input cells ── */
+
+.manual-input {
+  font-family: inherit;
+  font-size: 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 0.3rem;
+  padding: 0.2rem 0.4rem;
+  background: var(--card);
+  color: var(--ink);
+  width: 100%;
+  min-width: 60px;
+  outline: none;
+}
+.manual-input:focus { border-color: var(--border-mid); }
+.manual-input.num { text-align: right; }
 
 /* ── Footer ── */
 
