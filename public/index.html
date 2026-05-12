@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Pignus-Facturación</title>
+    <title>Pignus — Facturación</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Lora:ital@0;1&display=swap" rel="stylesheet">
@@ -11,63 +11,146 @@
   </head>
   <body>
     <header class="header">
-      <img src="/Logo_Pignus_Facturacion.png" alt="Pignus" class="header__logo">
+      <div class="header__brand">
+        <img src="/PignusLabs_Logo.png" alt="Pignus Labs" class="header__logo">
+        <span class="header__title">Facturación</span>
+      </div>
+      <span class="header__user" id="header-user"></span>
     </header>
 
-    <main class="main">
-      <div class="toolbar">
-        <div class="toolbar-left">
-          <button id="add-row-btn" type="button" class="btn btn--primary">+ Agregar fila</button>
-          <button id="edit-btn" type="button" class="btn btn--ghost" disabled>✎ Editar</button>
-          <button id="delete-btn" type="button" class="btn btn--ghost btn--danger" disabled>✕ Eliminar</button>
+    <div class="app-shell app-shell--fluid">
+      <aside class="sidebar">
+        <div class="sidebar__section">
+          <div class="sidebar__section-title">Módulos</div>
+          <ul class="sidebar__list">
+            <li class="sidebar__item"><a href="https://pignuslabs.com.ar/">Portal</a></li>
+            <li class="sidebar__item sidebar__item--active"><a href="#">Facturación</a></li>
+            <li class="sidebar__item"><a href="https://inversiones.pignuslabs.com.ar/">Inversiones</a></li>
+          </ul>
         </div>
-        <p id="status" class="status" aria-live="polite"></p>
-        <div class="toolbar-right">
-          <button id="fetch-btn" type="button" class="btn btn--primary">
-            <span id="fetch-label">+ Cargar últimos pedidos</span>
-          </button>
-          <button id="import-btn" type="button" class="btn btn--secondary">Import 2026 history ↓</button>
-          <button id="export-btn" type="button" class="btn btn--secondary" disabled>Añadir a Sheets</button>
-          <button id="open-btn" type="button" class="btn btn--secondary" disabled>↗ Abrir Sheets</button>
+      </aside>
+
+      <div style="min-width:0">
+        <div class="main">
+
+          <div class="toolbar">
+            <div class="toolbar-left">
+              <button id="add-row-btn" type="button" class="btn btn--primary">+ Agregar fila</button>
+              <button id="edit-btn" type="button" class="btn btn--ghost" disabled>✎ Editar</button>
+              <button id="delete-btn" type="button" class="btn btn--ghost btn--danger" disabled>✕ Eliminar</button>
+            </div>
+            <p id="status" class="status" aria-live="polite"></p>
+            <div class="toolbar-right">
+              <button id="fetch-btn" type="button" class="btn btn--primary">
+                <span id="fetch-label">+ Cargar últimos pedidos</span>
+              </button>
+              <button id="export-btn" type="button" class="btn btn--secondary" disabled>Añadir a Sheets</button>
+              <button id="open-btn" type="button" class="btn btn--secondary" disabled>↗ Abrir Sheets</button>
+            </div>
+          </div>
+
+          <div class="kpi-panel">
+            <div class="kpi-grid">
+              <div class="kpi-card">
+                <span class="kpi-label">Ventas este mes</span>
+                <span class="kpi-value" id="kpi-sales-month">—</span>
+              </div>
+              <div class="kpi-card">
+                <span class="kpi-label">Facturado este mes</span>
+                <span class="kpi-value" id="kpi-billed-month">—</span>
+              </div>
+              <div class="kpi-card">
+                <span class="kpi-label">Facturado este año</span>
+                <span class="kpi-value" id="kpi-billed-year">—</span>
+              </div>
+              <div class="kpi-card">
+                <span class="kpi-label">Restante en categoría</span>
+                <span class="kpi-value" id="kpi-remaining">—</span>
+              </div>
+            </div>
+
+            <div class="kpi-row">
+              <span class="kpi-row-label">Período</span>
+              <div class="kpi-period-inputs">
+                <input type="date" id="period-from" class="manual-input">
+                <span class="kpi-period-sep">—</span>
+                <input type="date" id="period-to" class="manual-input">
+              </div>
+              <div class="kpi-row-results">
+                <div class="kpi-inline">
+                  <span class="kpi-label">Ventas</span>
+                  <span class="kpi-value" id="kpi-sales-period">—</span>
+                </div>
+                <div class="kpi-inline">
+                  <span class="kpi-label">Facturado</span>
+                  <span class="kpi-value" id="kpi-billed-period">—</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="kpi-row">
+              <span class="kpi-row-label">Categoría fiscal</span>
+              <select id="tax-category" class="manual-input">
+                <option value="A">Cat. A — máx $6.800.000</option>
+                <option value="B">Cat. B — máx $10.200.000</option>
+                <option value="C">Cat. C — máx $14.400.000</option>
+                <option value="D">Cat. D — máx $20.200.000</option>
+                <option value="E">Cat. E — máx $28.500.000</option>
+                <option value="F">Cat. F — máx $40.000.000</option>
+                <option value="G">Cat. G — máx $51.000.000</option>
+                <option value="H" selected>Cat. H — máx $61.344.853</option>
+                <option value="J">Cat. J — máx $76.500.000</option>
+                <option value="K">Cat. K — máx $94.805.682</option>
+              </select>
+              <div class="kpi-tax-progress">
+                <div class="progress-bar">
+                  <div class="progress-bar__fill" id="tax-fill" style="width:0%"></div>
+                </div>
+                <span class="kpi-tax-pct" id="tax-pct">0%</span>
+              </div>
+            </div>
+          </div>
+
+          <section id="table-section">
+            <div class="table-wrap">
+              <table id="orders-table" class="orders-table"></table>
+            </div>
+          </section>
+
+          <div class="meta-bar" id="meta-bar">
+            <button id="import-btn" type="button" class="btn btn--secondary">Importar historial 2026</button>
+            <button id="stop-import-btn" type="button" class="btn btn--danger" disabled>⏹ Detener</button>
+            <span class="meta-sep">·</span>
+            <span id="meta-count">—</span>
+            <span class="meta-sep">·</span>
+            <span id="meta-oldest">Más antigua: —</span>
+            <span class="meta-sep">·</span>
+            <div class="progress-wrap">
+              <div class="progress-bar"><div class="progress-bar__fill" id="progress-fill" style="width:0%"></div></div>
+              <span id="progress-text">0%</span>
+              <span class="progress-label">de 2026</span>
+            </div>
+            <button id="expand-btn" type="button" class="btn btn--ghost btn--expand">Expandir →</button>
+          </div>
+
+          <details class="debug-section">
+            <summary>Aux Debug Tools</summary>
+            <div class="debug-body">
+              <button id="clear-cache-btn" type="button" class="btn btn--danger">✕ Limpiar caché</button>
+              <span id="clear-cache-status" class="debug-status"></span>
+            </div>
+          </details>
+
+          <div hidden id="auth-section" style="margin-top:1rem">
+            <button id="auth-btn" type="button" class="btn btn--ghost">Re-authorize ML ↗</button>
+          </div>
         </div>
+
+        <footer class="footer">
+          <p>Hecho por Javi con ☕ &amp; ✨ en 2026</p>
+        </footer>
       </div>
-
-      <div class="meta-bar" id="meta-bar">
-        <span id="meta-count">—</span>
-        <span class="meta-sep">·</span>
-        <span id="meta-oldest">Más antigua: —</span>
-        <span class="meta-sep">·</span>
-        <div class="progress-wrap">
-          <div class="progress-bar"><div class="progress-bar__fill" id="progress-fill" style="width:0%"></div></div>
-          <span id="progress-text">0%</span>
-          <span class="progress-label">de 2026</span>
-        </div>
-        <button id="expand-btn" type="button" class="btn btn--ghost btn--expand">Expandir →</button>
-      </div>
-
-      <section id="table-section">
-        <div class="table-wrap">
-          <table id="orders-table" class="orders-table"></table>
-        </div>
-      </section>
-
-      <details class="debug-section">
-        <summary>Aux Debug Tools</summary>
-        <div class="debug-body">
-          <button id="clear-cache-btn" type="button" class="btn btn--danger">✕ Limpiar caché</button>
-          <span id="clear-cache-status" class="debug-status"></span>
-          <button id="stop-import-btn" type="button" class="btn btn--danger" disabled>⏹ Detener importación</button>
-        </div>
-      </details>
-
-      <div hidden id="auth-section" style="margin-top:1rem">
-        <button id="auth-btn" type="button" class="btn btn--ghost">Re-authorize ML ↗</button>
-      </div>
-    </main>
-
-    <footer class="footer">
-      <p>Hecho por Javi con ☕ &amp; ✨ en 2026</p>
-    </footer>
+    </div>
 
     <script>
       let SHEET_URL = null;
@@ -78,6 +161,23 @@
 
       const COLLAPSED_COLS = ['Nombre', 'Fecha Factura', 'Pago', 'Cupón', 'Suma Impuestos', 'Costo Envio', 'Neto', 'Provincia'];
       const EXPANDED_COLS  = ['Orden ID', 'Nombre', 'Fecha Compra', 'Fecha Factura', 'Pago', 'Cupón', 'Retencion IIBB', 'Imp SIRTAC', 'Suma Impuestos', 'Costo Envio', 'Neto', 'Provincia', 'Localidad', 'Orígen'];
+
+      const TAX_CATEGORIES = {
+        A: 6_800_000,
+        B: 10_200_000,
+        C: 14_400_000,
+        D: 20_200_000,
+        E: 28_500_000,
+        F: 40_000_000,
+        G: 51_000_000,
+        H: 61_344_853,
+        J: 76_500_000,
+        K: 94_805_682,
+      };
+
+      const NOW = new Date();
+      const CURRENT_MONTH = NOW.getMonth();
+      const CURRENT_YEAR  = NOW.getFullYear();
 
       let isExpanded = false;
       const getVisibleCols = (headers) => (isExpanded ? EXPANDED_COLS : COLLAPSED_COLS)
@@ -132,6 +232,62 @@
         statusEl.className = `status${type ? ` status--${type}` : ''}`;
       };
 
+      // ── KPI calculations ─────────────────────────────────────────────────────
+
+      const updateKPIs = () => {
+        const pagoIdx    = lastHeaders.indexOf('Pago');
+        const fechaIdx   = lastHeaders.indexOf('Fecha Compra');
+        if (pagoIdx === -1 || fechaIdx === -1) return;
+
+        const allRows = [...lastFetchedRows, ...getManualRows()];
+
+        let salesMonth = 0, billedMonth = 0, billedYear = 0;
+        for (const row of allRows) {
+          const d = new Date(row[fechaIdx]);
+          if (isNaN(d)) continue;
+          const pago = Number(row[pagoIdx] || 0);
+          if (d.getFullYear() === CURRENT_YEAR) {
+            billedYear += pago;
+            if (d.getMonth() === CURRENT_MONTH) {
+              salesMonth++;
+              billedMonth += pago;
+            }
+          }
+        }
+
+        $('kpi-sales-month').textContent  = salesMonth;
+        $('kpi-billed-month').textContent = ars.format(billedMonth);
+        $('kpi-billed-year').textContent  = ars.format(billedYear);
+
+        const catKey     = $('tax-category').value;
+        const catMax     = TAX_CATEGORIES[catKey] || TAX_CATEGORIES.H;
+        const remaining  = Math.max(0, catMax - billedYear);
+        const pct        = Math.min(100, (billedYear / catMax) * 100);
+
+        const remainingEl = $('kpi-remaining');
+        remainingEl.textContent = ars.format(remaining);
+        remainingEl.className   = `kpi-value${pct >= 90 ? ' kpi-value--err' : pct >= 70 ? ' kpi-value--warn' : ''}`;
+
+        $('tax-fill').style.width = `${pct}%`;
+        $('tax-pct').textContent  = `${pct.toFixed(1)}%`;
+
+        const fromEl = $('period-from');
+        const toEl   = $('period-to');
+        if (fromEl.value && toEl.value) {
+          const from = new Date(fromEl.value);
+          const to   = new Date(toEl.value + 'T23:59:59');
+          let salesPeriod = 0, billedPeriod = 0;
+          for (const row of allRows) {
+            const d = new Date(row[fechaIdx]);
+            if (isNaN(d) || d < from || d > to) continue;
+            salesPeriod++;
+            billedPeriod += Number(row[pagoIdx] || 0);
+          }
+          $('kpi-sales-period').textContent  = salesPeriod;
+          $('kpi-billed-period').textContent = ars.format(billedPeriod);
+        }
+      };
+
       // ── Checked rows state (survives re-renders) ──────────────────────────
       const checkedIds = new Set();
 
@@ -181,7 +337,6 @@
       const renderTable = ({ headers, rows }) => {
         lastHeaders = headers;
 
-        // Prune checkedIds so deleted rows can't remain "selected"
         const validIds = new Set();
         for (const r of getManualRows()) validIds.add(`manual-${r[0]}-${r[1]}`);
         const _hidden = getHiddenIds();
@@ -190,7 +345,6 @@
 
         table.innerHTML = '';
 
-        // ── thead ──
         const visibleCols = getVisibleCols(headers);
         const thead = document.createElement('thead');
         const headRow = document.createElement('tr');
@@ -206,7 +360,6 @@
         thead.append(headRow);
         table.append(thead);
 
-        // ── tbody ──
         const tbody = document.createElement('tbody');
         const hiddenIds = getHiddenIds();
         const mlOverrides = getMlOverrides();
@@ -511,9 +664,9 @@
         exportBtn.disabled = false;
         openBtn.disabled = false;
         updateMeta(data.meta);
+        updateKPIs();
       };
 
-      // Load cache + edits from KV
       const loadFromCache = async () => {
         try {
           const [cacheData, editsData] = await Promise.all([
@@ -622,6 +775,20 @@
 
       openBtn.addEventListener('click', () => window.open(SHEET_URL, '_blank'));
       $('auth-btn').addEventListener('click', () => { window.location.href = '/api/meli/login'; });
+
+      $('period-from').addEventListener('change', updateKPIs);
+      $('period-to').addEventListener('change', updateKPIs);
+      $('tax-category').addEventListener('change', updateKPIs);
+
+      (async () => {
+        try {
+          const res = await fetch('/cdn-cgi/access/get-identity', { credentials: 'include' });
+          if (res.ok) {
+            const { email } = await res.json();
+            $('header-user').textContent = `Hola, ${email.split('@')[0]}`;
+          }
+        } catch {}
+      })();
     </script>
   </body>
 </html>
