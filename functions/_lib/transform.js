@@ -1,4 +1,5 @@
 const toNumber = (value) => Number(value || 0);
+const toDateStr = (iso) => (iso ? iso.slice(0, 10) : '');
 const nameOf = (v) => (typeof v === 'string' ? v : v?.name) || '';
 
 export const OUTPUT_HEADERS = [
@@ -48,7 +49,7 @@ export function transformOrderToRow(order) {
 
   return [
     String(order.id || ''),
-    order.date_created || '',
+    toDateStr(order.date_created),
     `${order.buyer?.first_name || ''} ${order.buyer?.last_name || ''}`.trim() || order.buyer?.nickname || '',
     pago,
     toNumber(order._cupon),
@@ -61,7 +62,7 @@ export function transformOrderToRow(order) {
     nameOf(order.shipping?.receiver_address?.city),
     nameOf(order.shipping?._state),
     'ML',
-    order._fecha_factura || '',
+    toDateStr(order._fecha_factura),
   ];
 }
 
