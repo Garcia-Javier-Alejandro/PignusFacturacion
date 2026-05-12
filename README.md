@@ -81,11 +81,11 @@ To wipe everything and start fresh (dev/recovery only — no UI button):
 
 ```bash
 # Clear ML orders cache
-curl -X DELETE https://pignusfacturacion.pages.dev/api/orders/cache \
+curl -X DELETE https://facturacion.pignuslabs.com.ar/api/orders/cache \
   -H "Authorization: Bearer <ADMIN_API_KEY>"
 
 # Clear manual edits (manual rows, hidden IDs, overrides)
-curl -X POST https://pignusfacturacion.pages.dev/api/edits \
+curl -X POST https://facturacion.pignuslabs.com.ar/api/edits \
   -H "Authorization: Bearer <ADMIN_API_KEY>" \
   -H "Content-Type: application/json" \
   -d '{"manualRows":[],"hiddenIds":[],"mlOverrides":{}}'
