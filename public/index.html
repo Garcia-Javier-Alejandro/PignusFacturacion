@@ -11,178 +11,188 @@
   </head>
   <body>
     <header class="header">
-      <div class="header__brand">
+      <a href="https://pignuslabs.com.ar/" style="display:flex;align-items:center;text-decoration:none">
         <img src="/PignusLabs_Logo.png" alt="Pignus Labs" class="header__logo">
-        <span class="header__title">Facturación</span>
-      </div>
+      </a>
+      <nav class="mod-nav" style="margin-left:1.5rem">
+        <a href="https://pignuslabs.com.ar/" class="mod-nav__item">Portal</a>
+        <a href="#" class="mod-nav__item mod-nav__item--active">Facturación</a>
+        <a href="https://inversiones.pignuslabs.com.ar/" class="mod-nav__item">Inversiones</a>
+      </nav>
       <span class="header__user" id="header-user"></span>
     </header>
 
-    <div class="app-shell app-shell--fluid">
-      <aside class="sidebar">
-        <div class="sidebar__section">
-          <div class="sidebar__section-title">Módulos</div>
-          <ul class="sidebar__list">
-            <li class="sidebar__item"><a href="https://pignuslabs.com.ar/">Portal</a></li>
-            <li class="sidebar__item sidebar__item--active"><a href="#">Facturación</a></li>
-            <li class="sidebar__item"><a href="https://inversiones.pignuslabs.com.ar/">Inversiones</a></li>
-          </ul>
-        </div>
-      </aside>
+    <main class="main">
 
-      <div style="min-width:0">
-        <div class="main">
+      <!-- ── KPI strip ────────────────────────────────────────────────────── -->
+      <div class="kpi-strip">
 
-          <div class="toolbar">
-            <div class="toolbar-left">
-              <button id="add-row-btn" type="button" class="btn btn--primary">+ Agregar fila</button>
-              <button id="edit-btn" type="button" class="btn btn--ghost" disabled>✎ Editar</button>
-              <button id="delete-btn" type="button" class="btn btn--ghost btn--danger" disabled>✕ Eliminar</button>
-            </div>
-            <p id="status" class="status" aria-live="polite"></p>
-            <div class="toolbar-right">
-              <button id="fetch-btn" type="button" class="btn btn--primary">
-                <span id="fetch-label">+ Cargar últimos pedidos</span>
-              </button>
-              <button id="export-btn" type="button" class="btn btn--secondary" disabled>Añadir a Sheets</button>
-              <button id="open-btn" type="button" class="btn btn--secondary" disabled>↗ Abrir Sheets</button>
-            </div>
+        <!-- Card 1: Ventas -->
+        <div class="kpi-card">
+          <div class="kpi-card__eyebrow">Ventas este mes</div>
+          <div class="kpi-card__value" id="kpi-sales-month">—</div>
+          <div class="kpi-card__meta">
+            <span class="kpi-delta" id="kpi-sales-delta"></span>
+            <span id="kpi-sales-delta-label"></span>
           </div>
-
-          <div class="kpi-panel">
-            <div class="kpi-grid">
-              <div class="kpi-card">
-                <span class="kpi-label">Ventas este mes</span>
-                <span class="kpi-value" id="kpi-sales-month">—</span>
-              </div>
-              <div class="kpi-card">
-                <span class="kpi-label">Facturado este mes</span>
-                <span class="kpi-value" id="kpi-billed-month">—</span>
-              </div>
-              <div class="kpi-card">
-                <span class="kpi-label">Facturado este año</span>
-                <span class="kpi-value" id="kpi-billed-year">—</span>
-              </div>
-              <div class="kpi-card">
-                <span class="kpi-label">Restante en categoría</span>
-                <span class="kpi-value" id="kpi-remaining">—</span>
-              </div>
-            </div>
-
-            <div class="kpi-row">
-              <span class="kpi-row-label">Período</span>
-              <div class="kpi-period-inputs">
-                <input type="date" id="period-from" class="manual-input">
-                <span class="kpi-period-sep">—</span>
-                <input type="date" id="period-to" class="manual-input">
-              </div>
-              <div class="kpi-row-results">
-                <div class="kpi-inline">
-                  <span class="kpi-label">Ventas</span>
-                  <span class="kpi-value" id="kpi-sales-period">—</span>
-                </div>
-                <div class="kpi-inline">
-                  <span class="kpi-label">Facturado</span>
-                  <span class="kpi-value" id="kpi-billed-period">—</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="kpi-row">
-              <span class="kpi-row-label">Categoría fiscal</span>
-              <select id="tax-category" class="manual-input">
-                <option value="A">Cat. A — máx $6.800.000</option>
-                <option value="B">Cat. B — máx $10.200.000</option>
-                <option value="C">Cat. C — máx $14.400.000</option>
-                <option value="D">Cat. D — máx $20.200.000</option>
-                <option value="E">Cat. E — máx $28.500.000</option>
-                <option value="F">Cat. F — máx $40.000.000</option>
-                <option value="G">Cat. G — máx $51.000.000</option>
-                <option value="H" selected>Cat. H — máx $61.344.853</option>
-                <option value="J">Cat. J — máx $76.500.000</option>
-                <option value="K">Cat. K — máx $94.805.682</option>
-              </select>
-              <div class="kpi-tax-progress">
-                <div class="progress-bar">
-                  <div class="progress-bar__fill" id="tax-fill" style="width:0%"></div>
-                </div>
-                <span class="kpi-tax-pct" id="tax-pct">0%</span>
-              </div>
-            </div>
-          </div>
-
-          <section id="table-section">
-            <div class="table-wrap">
-              <table id="orders-table" class="orders-table"></table>
-            </div>
-          </section>
-
-          <div class="meta-bar" id="meta-bar">
-            <button id="import-btn" type="button" class="btn btn--secondary">Importar historial 2026</button>
-            <button id="stop-import-btn" type="button" class="btn btn--danger" disabled>⏹ Detener</button>
-            <span class="meta-sep">·</span>
-            <span id="meta-count">—</span>
-            <span class="meta-sep">·</span>
-            <span id="meta-oldest">Más antigua: —</span>
-            <span class="meta-sep">·</span>
-            <div class="progress-wrap">
-              <div class="progress-bar"><div class="progress-bar__fill" id="progress-fill" style="width:0%"></div></div>
-              <span id="progress-text">0%</span>
-              <span class="progress-label">de 2026</span>
-            </div>
-            <button id="expand-btn" type="button" class="btn btn--ghost btn--expand">Expandir →</button>
-          </div>
-
-          <details class="debug-section">
-            <summary>Aux Debug Tools</summary>
-            <div class="debug-body">
-              <button id="clear-cache-btn" type="button" class="btn btn--danger">✕ Limpiar caché</button>
-              <span id="clear-cache-status" class="debug-status"></span>
-            </div>
-          </details>
-
-          <div hidden id="auth-section" style="margin-top:1rem">
-            <button id="auth-btn" type="button" class="btn btn--ghost">Re-authorize ML ↗</button>
-          </div>
+          <svg class="kpi-spark" id="spark-sales" viewBox="0 0 200 36" preserveAspectRatio="none"></svg>
         </div>
 
-        <footer class="footer">
-          <p>Hecho por Javi con ☕ &amp; ✨ en 2026</p>
-        </footer>
+        <!-- Card 2: Facturado -->
+        <div class="kpi-card">
+          <div class="kpi-card__eyebrow">Facturado este mes</div>
+          <div class="kpi-card__value kpi-card__value--lg" id="kpi-billed-month">—</div>
+          <div class="kpi-card__meta">
+            <span class="kpi-delta" id="kpi-billed-delta"></span>
+            <span id="kpi-billed-delta-label"></span>
+            <span class="pill pill--gold" id="kpi-pending-pill" style="display:none"></span>
+          </div>
+          <svg class="kpi-spark" id="spark-billed" viewBox="0 0 200 36" preserveAspectRatio="none"></svg>
+        </div>
+
+        <!-- Card 3: Restante en categoría -->
+        <div class="kpi-card">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <div class="kpi-card__eyebrow">Restante en categoría</div>
+            <select id="tax-category" class="kpi-card__cat-select">
+              <option value="A">Cat. A</option>
+              <option value="B">Cat. B</option>
+              <option value="C">Cat. C</option>
+              <option value="D">Cat. D</option>
+              <option value="E">Cat. E</option>
+              <option value="F">Cat. F</option>
+              <option value="G">Cat. G</option>
+              <option value="H" selected>Cat. H</option>
+              <option value="J">Cat. J</option>
+              <option value="K">Cat. K</option>
+            </select>
+          </div>
+          <div class="kpi-card__value" id="kpi-remaining">—</div>
+          <div class="kpi-card__bars">
+            <div class="kpi-bar-row">
+              <div class="kpi-bar-row__header">
+                <span class="kpi-bar-row__label">Este año</span>
+                <span class="kpi-bar-row__amount" id="bar-year-amount"></span>
+              </div>
+              <div class="kpi-bar-row__track">
+                <div class="kpi-bar-row__fill" id="bar-year-fill" style="width:0%"></div>
+              </div>
+            </div>
+            <div class="kpi-bar-row">
+              <div class="kpi-bar-row__header">
+                <span class="kpi-bar-row__label">Este mes</span>
+                <span class="kpi-bar-row__amount" id="bar-month-amount"></span>
+              </div>
+              <div class="kpi-bar-row__track">
+                <div class="kpi-bar-row__fill" id="bar-month-fill" style="width:0%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
+
+      <!-- ── Period row ───────────────────────────────────────────────────── -->
+      <div class="kpi-period-row">
+        <span class="kpi-period-row__label">Período</span>
+        <div class="kpi-period-row__inputs">
+          <input type="date" id="period-from" class="manual-input">
+          <span class="kpi-period-row__sep">—</span>
+          <input type="date" id="period-to" class="manual-input">
+        </div>
+        <div class="kpi-period-row__results">
+          <div class="kpi-inline">
+            <span class="kpi-card__eyebrow">Ventas</span>
+            <span class="kpi-card__value" id="kpi-sales-period">—</span>
+          </div>
+          <div class="kpi-inline">
+            <span class="kpi-card__eyebrow">Facturado</span>
+            <span class="kpi-card__value" id="kpi-billed-period">—</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Toolbar ──────────────────────────────────────────────────────── -->
+      <div class="toolbar">
+        <div class="toolbar-left">
+          <button id="add-row-btn" type="button" class="btn btn--primary">+ Agregar fila</button>
+          <button id="edit-btn" type="button" class="btn btn--ghost" disabled>✎ Editar</button>
+          <button id="delete-btn" type="button" class="btn btn--ghost btn--danger" disabled>✕ Eliminar</button>
+        </div>
+        <p id="status" class="status" aria-live="polite"></p>
+        <div class="toolbar-right">
+          <button id="fetch-btn" type="button" class="btn btn--primary">
+            <span id="fetch-label">+ Cargar últimos pedidos</span>
+          </button>
+          <button id="export-btn" type="button" class="btn btn--secondary" disabled>Añadir a Sheets</button>
+          <button id="open-btn" type="button" class="btn btn--secondary" disabled>↗ Abrir Sheets</button>
+        </div>
+      </div>
+
+      <!-- ── Table ────────────────────────────────────────────────────────── -->
+      <section id="table-section">
+        <div class="table-wrap">
+          <table id="orders-table" class="orders-table"></table>
+        </div>
+      </section>
+
+      <!-- ── History import bar ───────────────────────────────────────────── -->
+      <div class="meta-bar" id="meta-bar">
+        <button id="import-btn" type="button" class="btn btn--secondary">Importar historial 2026</button>
+        <button id="stop-import-btn" type="button" class="btn btn--danger" disabled>⏹ Detener</button>
+        <span class="meta-sep">·</span>
+        <span id="meta-count">—</span>
+        <span class="meta-sep">·</span>
+        <span id="meta-oldest">Más antigua: —</span>
+        <span class="meta-sep">·</span>
+        <div class="progress-wrap">
+          <div class="progress-bar"><div class="progress-bar__fill" id="progress-fill" style="width:0%"></div></div>
+          <span id="progress-text">0%</span>
+          <span class="progress-label">de 2026</span>
+        </div>
+        <button id="expand-btn" type="button" class="btn btn--ghost btn--expand">Expandir →</button>
+      </div>
+
+      <details class="debug-section">
+        <summary>Aux Debug Tools</summary>
+        <div class="debug-body">
+          <button id="clear-cache-btn" type="button" class="btn btn--danger">✕ Limpiar caché</button>
+          <span id="clear-cache-status" class="debug-status"></span>
+        </div>
+      </details>
+
+      <div hidden id="auth-section" style="margin-top:1rem">
+        <button id="auth-btn" type="button" class="btn btn--ghost">Re-authorize ML ↗</button>
+      </div>
+    </main>
+
+    <footer class="footer">
+      <p>Hecho por Javi con ☕ &amp; ✨ en 2026</p>
+    </footer>
 
     <script>
       let SHEET_URL = null;
       const HISTORY_CUTOFF = new Date('2026-01-01T00:00:00');
-      const MONEY_COLS = new Set(['Pago', 'Recargo MP', 'Retencion IIBB', 'Imp SIRTAC', 'Suma Impuestos', 'Costo Envio', 'Neto', 'Cupón']);
+      const MONEY_COLS   = new Set(['Pago', 'Recargo MP', 'Retencion IIBB', 'Imp SIRTAC', 'Suma Impuestos', 'Costo Envio', 'Neto', 'Cupón']);
       const READONLY_COLS = new Set(['Suma Impuestos', 'Neto']);
-      const DATE_COLS = new Set(['Fecha Compra', 'Fecha Factura']);
+      const DATE_COLS    = new Set(['Fecha Compra', 'Fecha Factura']);
 
-      const COLLAPSED_COLS = ['Nombre', 'Fecha Factura', 'Pago', 'Cupón', 'Suma Impuestos', 'Costo Envio', 'Neto', 'Provincia'];
-      const EXPANDED_COLS  = ['Orden ID', 'Nombre', 'Fecha Compra', 'Fecha Factura', 'Pago', 'Cupón', 'Retencion IIBB', 'Imp SIRTAC', 'Suma Impuestos', 'Costo Envio', 'Neto', 'Provincia', 'Localidad', 'Orígen'];
+      const COLLAPSED_COLS = ['Nombre', 'Fecha Factura', 'Pago', 'Cupón', 'Suma Impuestos', 'Costo Envio', 'Neto', 'Provincia', 'Estado'];
+      const EXPANDED_COLS  = ['Orden ID', 'Nombre', 'Fecha Compra', 'Fecha Factura', 'Pago', 'Cupón', 'Retencion IIBB', 'Imp SIRTAC', 'Suma Impuestos', 'Costo Envio', 'Neto', 'Provincia', 'Localidad', 'Orígen', 'Estado'];
 
       const TAX_CATEGORIES = {
-        A: 6_800_000,
-        B: 10_200_000,
-        C: 14_400_000,
-        D: 20_200_000,
-        E: 28_500_000,
-        F: 40_000_000,
-        G: 51_000_000,
-        H: 61_344_853,
-        J: 76_500_000,
-        K: 94_805_682,
+        A: 6_800_000,  B: 10_200_000, C: 14_400_000, D: 20_200_000,
+        E: 28_500_000, F: 40_000_000, G: 51_000_000, H: 61_344_853,
+        J: 76_500_000, K: 94_805_682,
       };
 
-      const NOW = new Date();
+      const NOW           = new Date();
       const CURRENT_MONTH = NOW.getMonth();
       const CURRENT_YEAR  = NOW.getFullYear();
 
       let isExpanded = false;
       const getVisibleCols = (headers) => (isExpanded ? EXPANDED_COLS : COLLAPSED_COLS)
-        .map((name) => ({ name, idx: headers.indexOf(name) }))
-        .filter(({ idx }) => idx !== -1);
+        .map((name) => ({ name, idx: name === 'Estado' ? -2 : headers.indexOf(name) }))
+        .filter(({ name, idx }) => name === 'Estado' || idx !== -1);
 
       const ars = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' });
 
@@ -215,10 +225,10 @@
       const editBtn       = $('edit-btn');
       const deleteBtn     = $('delete-btn');
       const expandBtn     = $('expand-btn');
-      const clearCacheBtn  = $('clear-cache-btn');
-      const clearCacheSt   = $('clear-cache-status');
-      const stopImportBtn  = $('stop-import-btn');
-      const table     = $('orders-table');
+      const clearCacheBtn = $('clear-cache-btn');
+      const clearCacheSt  = $('clear-cache-status');
+      const stopImportBtn = $('stop-import-btn');
+      const table         = $('orders-table');
       const exportBtn     = $('export-btn');
       const openBtn       = $('open-btn');
       const statusEl      = $('status');
@@ -232,93 +242,198 @@
         statusEl.className = `status${type ? ` status--${type}` : ''}`;
       };
 
-      // ── KPI calculations ─────────────────────────────────────────────────────
+      // ── Sparkline ─────────────────────────────────────────────────────────
+
+      const drawSparkline = (svgEl, values, color = '#1d4ed8') => {
+        if (!values.length) return;
+        const max = Math.max(...values, 1);
+        const w = 200, h = 36, n = values.length;
+        const pts = values.map((v, i) => {
+          const x = (i / (n - 1)) * w;
+          const y = h - (v / max) * (h - 4) - 2;
+          return `${x},${y}`;
+        }).join(' ');
+        const fill = values.map((v, i) => {
+          const x = (i / (n - 1)) * w;
+          const y = h - (v / max) * (h - 4) - 2;
+          return `${x},${y}`;
+        });
+        fill.push(`${w},${h}`, `0,${h}`);
+        svgEl.innerHTML = `
+          <defs>
+            <linearGradient id="sg${svgEl.id}" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="${color}" stop-opacity="0.18"/>
+              <stop offset="100%" stop-color="${color}" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+          <polygon points="${fill.join(' ')}" fill="url(#sg${svgEl.id})"/>
+          <polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+        `;
+      };
+
+      // ── KPI calculations ─────────────────────────────────────────────────
 
       const updateKPIs = () => {
-        const pagoIdx    = lastHeaders.indexOf('Pago');
-        const fechaIdx   = lastHeaders.indexOf('Fecha Compra');
+        const pagoIdx  = lastHeaders.indexOf('Pago');
+        const fechaIdx = lastHeaders.indexOf('Fecha Compra');
+        const factIdx  = lastHeaders.indexOf('Fecha Factura');
         if (pagoIdx === -1 || fechaIdx === -1) return;
 
         const allRows = [...lastFetchedRows, ...getManualRows()];
 
+        // Last 30 days rolling window
+        const cutoff30 = new Date(NOW);
+        cutoff30.setDate(cutoff30.getDate() - 29);
+
+        // Buckets: one per day for last 30 days
+        const salesBuckets  = new Array(30).fill(0);
+        const billedBuckets = new Array(30).fill(0);
+
         let salesMonth = 0, billedMonth = 0, billedYear = 0;
+        let salesPrevMonth = 0, billedPrevMonth = 0;
+        let pendingCount = 0, pendingAmount = 0;
+
+        const prevMonth     = CURRENT_MONTH === 0 ? 11 : CURRENT_MONTH - 1;
+        const prevMonthYear = CURRENT_MONTH === 0 ? CURRENT_YEAR - 1 : CURRENT_YEAR;
+
         for (const row of allRows) {
           const d = new Date(row[fechaIdx]);
           if (isNaN(d)) continue;
           const pago = Number(row[pagoIdx] || 0);
-          if (d.getFullYear() === CURRENT_YEAR) {
+          const yr = d.getFullYear(), mo = d.getMonth();
+
+          if (yr === CURRENT_YEAR) {
             billedYear += pago;
-            if (d.getMonth() === CURRENT_MONTH) {
+            if (mo === CURRENT_MONTH) {
               salesMonth++;
               billedMonth += pago;
             }
           }
+          if (yr === prevMonthYear && mo === prevMonth) {
+            salesPrevMonth++;
+            billedPrevMonth += pago;
+          }
+
+          // 30-day bucket
+          const dayOffset = Math.floor((d - cutoff30) / 86400000);
+          if (dayOffset >= 0 && dayOffset < 30) {
+            salesBuckets[dayOffset]++;
+            billedBuckets[dayOffset] += pago;
+          }
+
+          // Pending (no Fecha Factura)
+          if (factIdx !== -1) {
+            const fv = row[factIdx];
+            if (!fv || fv === '') {
+              pendingCount++;
+              pendingAmount += pago;
+            }
+          }
         }
 
-        $('kpi-sales-month').textContent  = salesMonth;
+        // Sales card
+        $('kpi-sales-month').textContent = salesMonth;
+        const salesDeltaEl = $('kpi-sales-delta');
+        const salesLabelEl = $('kpi-sales-delta-label');
+        if (salesPrevMonth > 0) {
+          const pct = ((salesMonth - salesPrevMonth) / salesPrevMonth * 100).toFixed(1);
+          const up  = salesMonth >= salesPrevMonth;
+          salesDeltaEl.textContent  = `${up ? '▲' : '▼'} ${Math.abs(pct)}%`;
+          salesDeltaEl.className    = `kpi-delta kpi-delta--${up ? 'up' : 'down'}`;
+          salesLabelEl.textContent  = `vs mes anterior (${salesPrevMonth})`;
+        }
+
+        // Facturado card
         $('kpi-billed-month').textContent = ars.format(billedMonth);
-        $('kpi-billed-year').textContent  = ars.format(billedYear);
+        const billedDeltaEl = $('kpi-billed-delta');
+        const billedLabelEl = $('kpi-billed-delta-label');
+        if (billedPrevMonth > 0) {
+          const pct = ((billedMonth - billedPrevMonth) / billedPrevMonth * 100).toFixed(1);
+          const up  = billedMonth >= billedPrevMonth;
+          billedDeltaEl.textContent = `${up ? '▲' : '▼'} ${Math.abs(pct)}%`;
+          billedDeltaEl.className   = `kpi-delta kpi-delta--${up ? 'up' : 'down'}`;
+          billedLabelEl.textContent = `vs mes anterior`;
+        }
+        const pillEl = $('kpi-pending-pill');
+        if (pendingCount > 0) {
+          pillEl.textContent  = `${pendingCount} pendientes · ${ars.format(pendingAmount)}`;
+          pillEl.style.display = '';
+        } else {
+          pillEl.style.display = 'none';
+        }
 
-        const catKey     = $('tax-category').value;
-        const catMax     = TAX_CATEGORIES[catKey] || TAX_CATEGORIES.H;
-        const remaining  = Math.max(0, catMax - billedYear);
-        const pct        = Math.min(100, (billedYear / catMax) * 100);
+        // Tax category card
+        const catKey    = $('tax-category').value;
+        const catMax    = TAX_CATEGORIES[catKey] || TAX_CATEGORIES.H;
+        const monthlyMax = catMax / 12;
+        const remaining = Math.max(0, catMax - billedYear);
+        $('kpi-remaining').textContent = ars.format(remaining);
 
-        const remainingEl = $('kpi-remaining');
-        remainingEl.textContent = ars.format(remaining);
-        remainingEl.className   = `kpi-value${pct >= 90 ? ' kpi-value--err' : pct >= 70 ? ' kpi-value--warn' : ''}`;
+        const yearPct  = Math.min(100, (billedYear  / catMax)    * 100);
+        const monthPct = Math.min(100, (billedMonth / monthlyMax) * 100);
 
-        $('tax-fill').style.width = `${pct}%`;
-        $('tax-pct').textContent  = `${pct.toFixed(1)}%`;
+        $('bar-year-amount').textContent  = `${yearPct.toFixed(1)}%  ·  ${ars.format(billedYear)}`;
+        $('bar-month-amount').textContent = `${monthPct.toFixed(1)}%  ·  ${ars.format(billedMonth)}`;
 
+        const yearFill  = $('bar-year-fill');
+        const monthFill = $('bar-month-fill');
+        yearFill.style.width  = `${yearPct}%`;
+        monthFill.style.width = `${monthPct}%`;
+        yearFill.className  = `kpi-bar-row__fill${yearPct  >= 90 ? ' kpi-bar-row__fill--err' : yearPct  >= 70 ? ' kpi-bar-row__fill--warn' : ''}`;
+        monthFill.className = `kpi-bar-row__fill${monthPct >= 90 ? ' kpi-bar-row__fill--err' : monthPct >= 70 ? ' kpi-bar-row__fill--warn' : ''}`;
+
+        // Sparklines
+        drawSparkline($('spark-sales'),  salesBuckets);
+        drawSparkline($('spark-billed'), billedBuckets, '#d97706');
+
+        // Period
         const fromEl = $('period-from');
         const toEl   = $('period-to');
         if (fromEl.value && toEl.value) {
           const from = new Date(fromEl.value);
           const to   = new Date(toEl.value + 'T23:59:59');
-          let salesPeriod = 0, billedPeriod = 0;
+          let sp = 0, bp = 0;
           for (const row of allRows) {
             const d = new Date(row[fechaIdx]);
             if (isNaN(d) || d < from || d > to) continue;
-            salesPeriod++;
-            billedPeriod += Number(row[pagoIdx] || 0);
+            sp++;
+            bp += Number(row[pagoIdx] || 0);
           }
-          $('kpi-sales-period').textContent  = salesPeriod;
-          $('kpi-billed-period').textContent = ars.format(billedPeriod);
+          $('kpi-sales-period').textContent  = sp;
+          $('kpi-billed-period').textContent = ars.format(bp);
         }
       };
 
-      // ── Checked rows state (survives re-renders) ──────────────────────────
+      // ── Checked rows state ────────────────────────────────────────────────
       const checkedIds = new Set();
 
-      // ── Toolbar selection buttons ─────────────────────────────────────────
       const updateToolbar = () => {
         const count = checkedIds.size;
         deleteBtn.disabled = count === 0;
-        editBtn.disabled = count !== 1;
-        editBtn.textContent = count > 1 ? '✎ No se puede editar múltiples filas' : '✎ Editar';
+        editBtn.disabled   = count !== 1;
+        editBtn.textContent  = count > 1 ? '✎ No se puede editar múltiples filas' : '✎ Editar';
         deleteBtn.textContent = '✕ Eliminar';
       };
 
       const updateMeta = (meta) => {
         if (!meta) return;
         const pct = calcProgress(meta.oldest_date);
-        metaCount.textContent = `${meta.loaded} órdenes`;
+        metaCount.textContent  = `${meta.loaded} órdenes`;
         metaOldest.textContent = `Más antigua: ${formatDate(meta.oldest_date) || '—'}`;
-        progressFill.style.width = `${pct}%`;
-        progressText.textContent = `${pct}%`;
+        progressFill.style.width  = `${pct}%`;
+        progressText.textContent  = `${pct}%`;
         if (meta.done && !importRunning) {
           importBtn.textContent = 'Historia completa ✓';
-          importBtn.disabled = true;
+          importBtn.disabled    = true;
         }
       };
 
-      // ── Edits state — in-memory mirror of KV "edits" key ─────────────────
+      // ── Edits state ───────────────────────────────────────────────────────
       let editsState = { manualRows: [], hiddenIds: [], mlOverrides: {} };
 
-      const getManualRows  = () => editsState.manualRows;
-      const getHiddenIds   = () => new Set(editsState.hiddenIds);
-      const getMlOverrides = () => editsState.mlOverrides;
+      const getManualRows   = () => editsState.manualRows;
+      const getHiddenIds    = () => new Set(editsState.hiddenIds);
+      const getMlOverrides  = () => editsState.mlOverrides;
 
       const persistEdits = () =>
         fetch('/api/edits', {
@@ -327,12 +442,19 @@
           body: JSON.stringify(editsState),
         }).catch(() => setStatus('Error al guardar cambios.', 'err'));
 
-      const saveManualRows = (rows) => { editsState.manualRows = rows; persistEdits(); };
-      const saveHiddenIds  = (set)  => { editsState.hiddenIds  = [...set]; persistEdits(); };
-      const saveMlOverrides = (obj) => { editsState.mlOverrides = obj; persistEdits(); };
+      const saveManualRows  = (rows) => { editsState.manualRows  = rows; persistEdits(); };
+      const saveHiddenIds   = (set)  => { editsState.hiddenIds   = [...set]; persistEdits(); };
+      const saveMlOverrides = (obj)  => { editsState.mlOverrides = obj;  persistEdits(); };
 
       // ── Table rendering ───────────────────────────────────────────────────
       let lastHeaders = [];
+
+      const getEstado = (row) => {
+        const idx = lastHeaders.indexOf('Fecha Factura');
+        if (idx === -1) return null;
+        const v = row[idx];
+        return (!v || v === '') ? 'Pendiente' : 'Facturado';
+      };
 
       const renderTable = ({ headers, rows }) => {
         lastHeaders = headers;
@@ -360,9 +482,9 @@
         thead.append(headRow);
         table.append(thead);
 
-        const tbody = document.createElement('tbody');
-        const hiddenIds = getHiddenIds();
-        const mlOverrides = getMlOverrides();
+        const tbody    = document.createElement('tbody');
+        const hiddenIds    = getHiddenIds();
+        const mlOverrides  = getMlOverrides();
 
         const buildRow = (row, rowId, isManual) => {
           const displayRow = (!isManual && mlOverrides[rowId]) ? mlOverrides[rowId] : row;
@@ -386,15 +508,25 @@
           tr.append(checkTd);
 
           for (const { name: h, idx } of visibleCols) {
-            const val = displayRow[idx];
             const td = document.createElement('td');
-            if (DATE_COLS.has(h)) {
-              td.textContent = formatDate(val);
-            } else if (MONEY_COLS.has(h)) {
-              td.textContent = ars.format(Number(val || 0));
-              td.classList.add('num');
+            if (h === 'Estado') {
+              const estado = getEstado(displayRow);
+              if (estado) {
+                const pill = document.createElement('span');
+                pill.className = `pill ${estado === 'Pendiente' ? 'pill--pending' : 'pill--ok'}`;
+                pill.textContent = estado;
+                td.append(pill);
+              }
             } else {
-              td.textContent = val ?? '';
+              const val = displayRow[idx];
+              if (DATE_COLS.has(h)) {
+                td.textContent = formatDate(val);
+              } else if (MONEY_COLS.has(h)) {
+                td.textContent = ars.format(Number(val || 0));
+                td.classList.add('num');
+              } else {
+                td.textContent = val ?? '';
+              }
             }
             tr.append(td);
           }
@@ -407,7 +539,7 @@
           const td = document.createElement('td');
           td.colSpan = visibleCols.length + 1;
           td.className = 'empty';
-          td.textContent = 'No orders found.';
+          td.textContent = 'No hay órdenes cargadas.';
           tr.append(td);
           tbody.append(tr);
         } else {
@@ -425,7 +557,7 @@
         updateToolbar();
       };
 
-      // ── Shared edit-row builder ───────────────────────────────────────────
+      // ── Edit row builder ──────────────────────────────────────────────────
       const recalcEditRow = (inputs) => {
         const pago    = Number(inputs['Pago']?.value || 0);
         const recargo = Number(inputs['Recargo MP']?.value || 0);
@@ -435,7 +567,7 @@
         const suma = iibb + sirtac;
         const neto = pago - recargo - suma - envio;
         if (inputs['Suma Impuestos']) inputs['Suma Impuestos'].textContent = ars.format(suma);
-        if (inputs['Neto'])          inputs['Neto'].textContent          = ars.format(neto);
+        if (inputs['Neto'])          inputs['Neto'].textContent           = ars.format(neto);
         inputs['_sumaVal'] = suma;
         inputs['_netoVal'] = neto;
       };
@@ -473,23 +605,23 @@
 
         const checkTd = document.createElement('td');
         checkTd.className = 'check-col edit-actions';
-        const saveBtn = document.createElement('button');
-        saveBtn.textContent = '✓';
-        saveBtn.title = 'Guardar';
-        saveBtn.className = 'btn btn--ghost btn--xs';
+        const saveBtn   = document.createElement('button');
+        saveBtn.textContent = '✓'; saveBtn.title = 'Guardar'; saveBtn.className = 'btn btn--ghost btn--xs';
         const cancelBtn = document.createElement('button');
-        cancelBtn.textContent = '✗';
-        cancelBtn.title = 'Cancelar';
-        cancelBtn.className = 'btn btn--ghost btn--xs';
+        cancelBtn.textContent = '✗'; cancelBtn.title = 'Cancelar'; cancelBtn.className = 'btn btn--ghost btn--xs';
         cancelBtn.addEventListener('click', onCancel);
         checkTd.append(saveBtn, cancelBtn);
         tr.append(checkTd);
 
         const inputs = buildEditInputs(headers, initialValues);
-        for (const { name: h } of getVisibleCols(headers)) {
+        for (const { name: h, idx } of getVisibleCols(headers)) {
           const td = document.createElement('td');
-          if (READONLY_COLS.has(h) || MONEY_COLS.has(h)) td.classList.add('num');
-          td.append(inputs[h]);
+          if (h === 'Estado') {
+            td.textContent = '';
+          } else {
+            if (READONLY_COLS.has(h) || MONEY_COLS.has(h)) td.classList.add('num');
+            td.append(inputs[h]);
+          }
           tr.append(td);
         }
 
@@ -498,7 +630,7 @@
           const row = headers.map((h) => {
             if (h === 'Suma Impuestos') return inputs['_sumaVal'] ?? 0;
             if (h === 'Neto')          return inputs['_netoVal'] ?? 0;
-            const el = inputs[h];
+            const el  = inputs[h];
             const val = el?.value ?? '';
             return MONEY_COLS.has(h) ? Number(val || 0) : val;
           });
@@ -523,13 +655,10 @@
           ]);
           if (!cacheRes.ok || !editsRes.ok) throw new Error('Error al limpiar');
           editsState = { manualRows: [], hiddenIds: [], mlOverrides: {} };
-          lastFetchedRows = [];
-          lastHeaders = [];
-          checkedIds.clear();
-          table.innerHTML = '';
-          importBtn.textContent = 'Importar historial 2026';
-          importBtn.disabled = false;
-          updateMeta({ loaded: 0, oldest_date: null, probe_total: 0, next_older_offset: null });
+          lastFetchedRows = []; lastHeaders = [];
+          checkedIds.clear(); table.innerHTML = '';
+          importBtn.textContent = 'Importar historial 2026'; importBtn.disabled = false;
+          updateMeta({ loaded: 0, oldest_date: null });
           clearCacheSt.textContent = '✓ Caché limpiada';
         } catch (e) {
           clearCacheSt.textContent = `Error: ${e.message}`;
@@ -549,25 +678,16 @@
       // ── Add row ───────────────────────────────────────────────────────────
       addRowBtn.addEventListener('click', () => {
         table.querySelector('tr.edit-row')?.remove();
-        const headers = lastHeaders;
-        if (!headers.length) { setStatus('Cargá órdenes primero.', 'err'); return; }
-
-        const defaults = headers.map((h) => h === 'Orígen' ? 'MANUAL' : '');
+        if (!lastHeaders.length) { setStatus('Cargá órdenes primero.', 'err'); return; }
+        const defaults = lastHeaders.map((h) => h === 'Orígen' ? 'MANUAL' : '');
         const { tr, inputs } = buildEditRow(
-          headers, defaults,
-          (row) => {
-            const existing = getManualRows();
-            existing.unshift(row);
-            saveManualRows(existing);
-            tr.remove();
-            renderTable({ headers: lastHeaders, rows: lastFetchedRows });
-          },
+          lastHeaders, defaults,
+          (row) => { const ex = getManualRows(); ex.unshift(row); saveManualRows(ex); tr.remove(); renderTable({ headers: lastHeaders, rows: lastFetchedRows }); },
           () => tr.remove(),
         );
-
         const tbody = table.querySelector('tbody') || table.appendChild(document.createElement('tbody'));
         tbody.insertBefore(tr, tbody.firstChild);
-        inputs[headers[0]]?.focus?.();
+        inputs[lastHeaders[0]]?.focus?.();
       });
 
       // ── Edit selected row ─────────────────────────────────────────────────
@@ -575,42 +695,29 @@
         if (checkedIds.size !== 1) return;
         const [rowId] = checkedIds;
         const isManual = rowId.startsWith('manual-');
-
         if (!isManual && !confirm('Estás por editar una fila cuyos datos se originaron en Mercado Libre. ¿Continuar?')) return;
-
-        const targetTr = [...table.querySelectorAll('tr[data-row-id]')]
-          .find((tr) => tr.dataset.rowId === rowId);
+        const targetTr = [...table.querySelectorAll('tr[data-row-id]')].find((tr) => tr.dataset.rowId === rowId);
         if (!targetTr) return;
-
         let currentValues;
         if (isManual) {
           currentValues = getManualRows().find((r) => `manual-${r[0]}-${r[1]}` === rowId) || [];
         } else {
-          const overrides = getMlOverrides();
-          currentValues = overrides[rowId] || lastFetchedRows.find((r) => String(r[0]) === rowId) || [];
+          const ov = getMlOverrides();
+          currentValues = ov[rowId] || lastFetchedRows.find((r) => String(r[0]) === rowId) || [];
         }
-
         table.querySelector('tr.edit-row')?.remove();
-
         const { tr: editTr, inputs } = buildEditRow(
           lastHeaders, currentValues,
           (row) => {
             if (isManual) {
-              const rows = getManualRows();
-              const idx = rows.findIndex((r) => `manual-${r[0]}-${r[1]}` === rowId);
+              const rows = getManualRows(); const idx = rows.findIndex((r) => `manual-${r[0]}-${r[1]}` === rowId);
               if (idx !== -1) { rows[idx] = row; saveManualRows(rows); }
-            } else {
-              const overrides = getMlOverrides();
-              overrides[rowId] = row;
-              saveMlOverrides(overrides);
-            }
-            checkedIds.delete(rowId);
-            updateToolbar();
+            } else { const ov = getMlOverrides(); ov[rowId] = row; saveMlOverrides(ov); }
+            checkedIds.delete(rowId); updateToolbar();
             renderTable({ headers: lastHeaders, rows: lastFetchedRows });
           },
           () => editTr.remove(),
         );
-
         targetTr.replaceWith(editTr);
         inputs[lastHeaders[0]]?.focus?.();
       });
@@ -619,28 +726,20 @@
       deleteBtn.addEventListener('click', () => {
         const count = checkedIds.size;
         if (!confirm(`¿Eliminar ${count} fila${count !== 1 ? 's' : ''}? Esta acción no se puede deshacer.`)) return;
-
         const hiddenIds = getHiddenIds();
         let manualRows = getManualRows();
-
         for (const rowId of checkedIds) {
-          if (rowId.startsWith('manual-')) {
-            manualRows = manualRows.filter((r) => `manual-${r[0]}-${r[1]}` !== rowId);
-          } else {
-            hiddenIds.add(rowId);
-          }
+          if (rowId.startsWith('manual-')) manualRows = manualRows.filter((r) => `manual-${r[0]}-${r[1]}` !== rowId);
+          else hiddenIds.add(rowId);
         }
-
-        saveManualRows(manualRows);
-        saveHiddenIds(hiddenIds);
-        checkedIds.clear();
-        updateToolbar();
+        saveManualRows(manualRows); saveHiddenIds(hiddenIds);
+        checkedIds.clear(); updateToolbar();
         renderTable({ headers: lastHeaders, rows: lastFetchedRows });
       });
 
       let lastFetchedRows = [];
 
-      // ── Second enrichment pass (Fecha Factura + Cupón) ───────────────────
+      // ── Enrichment pass ───────────────────────────────────────────────────
       const enrichExtra = async () => {
         let done = false;
         while (!done) {
@@ -648,21 +747,17 @@
             const res = await fetch('/api/orders/enrich-extra', {});
             if (!res.ok) break;
             const data = await res.json();
-            applyData(data);
-            done = data.enrichDone;
-          } catch {
-            break;
-          }
+            applyData(data); done = data.enrichDone;
+          } catch { break; }
         }
       };
 
-      // ── Data loading helpers ──────────────────────────────────────────────
+      // ── Data loading ──────────────────────────────────────────────────────
       const applyData = (data) => {
         lastFetchedRows = data.rows || [];
         if (data.sheet_url) SHEET_URL = data.sheet_url;
         renderTable(data);
-        exportBtn.disabled = false;
-        openBtn.disabled = false;
+        exportBtn.disabled = false; openBtn.disabled = false;
         updateMeta(data.meta);
         updateKPIs();
       };
@@ -676,81 +771,54 @@
           editsState.manualRows  = editsData.manualRows  || [];
           editsState.hiddenIds   = editsData.hiddenIds   || [];
           editsState.mlOverrides = editsData.mlOverrides || {};
-          if (cacheData.rows?.length) {
-            applyData(cacheData);
-            await enrichExtra();
-          }
+          if (cacheData.rows?.length) { applyData(cacheData); await enrichExtra(); }
         } catch {}
       };
 
       loadFromCache();
 
       fetchBtn.addEventListener('click', async () => {
-        fetchBtn.disabled = true;
-        fetchLbl.textContent = 'Fetching…';
-        setStatus('Loading orders…');
+        fetchBtn.disabled = true; fetchLbl.textContent = 'Fetching…'; setStatus('Loading orders…');
         try {
-          const res = await fetch('/api/orders/recent', {});
+          const res  = await fetch('/api/orders/recent', {});
           const data = await res.json();
           if (!res.ok) throw new Error(data.error || 'Request failed.');
           applyData(data);
           const n = data.meta?.loaded ?? data.rows.length;
           setStatus(`${n} order${n !== 1 ? 's' : ''} loaded.`, 'ok');
           await enrichExtra();
-        } catch (err) {
-          setStatus(err.message, 'err');
-        } finally {
-          fetchBtn.disabled = false;
-          fetchLbl.textContent = 'Fetch last 20 orders';
-        }
+        } catch (err) { setStatus(err.message, 'err'); }
+        finally { fetchBtn.disabled = false; fetchLbl.textContent = '+ Cargar últimos pedidos'; }
       });
 
-      let importRunning = false;
-      let importCompletedNaturally = false;
+      let importRunning = false, importCompletedNaturally = false;
 
       const stopImport = () => {
-        importRunning = false;
-        stopImportBtn.disabled = true;
+        importRunning = false; stopImportBtn.disabled = true;
         importBtn.textContent = 'Importar historial 2026';
       };
 
       stopImportBtn.addEventListener('click', () => {
-        if (importRunning) {
-          stopImport();
-          setStatus('Importación detenida.', '');
-        }
+        if (importRunning) { stopImport(); setStatus('Importación detenida.'); }
       });
 
       importBtn.addEventListener('click', async () => {
-        if (importRunning) { stopImport(); setStatus('Importación detenida.', ''); return; }
-        importRunning = true;
-        importCompletedNaturally = false;
-        stopImportBtn.disabled = false;
-        importBtn.textContent = 'Detener ✕';
+        if (importRunning) { stopImport(); setStatus('Importación detenida.'); return; }
+        importRunning = true; importCompletedNaturally = false;
+        stopImportBtn.disabled = false; importBtn.textContent = 'Detener ✕';
         setStatus('Importando historial…');
-
         while (importRunning) {
           try {
-            const res = await fetch('/api/orders/older', {});
+            const res  = await fetch('/api/orders/older', {});
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || 'Error loading older orders.');
             applyData(data);
             setStatus(`Importando… ${data.meta.loaded} órdenes — más antigua: ${formatDate(data.meta.oldest_date)}`);
-            if (data.meta.done) {
-              importCompletedNaturally = true;
-              importRunning = false;
-              break;
-            }
+            if (data.meta.done) { importCompletedNaturally = true; importRunning = false; break; }
             await new Promise((r) => setTimeout(r, 2000));
-          } catch (err) {
-            setStatus(err.message, 'err');
-            importRunning = false;
-            break;
-          }
+          } catch (err) { setStatus(err.message, 'err'); importRunning = false; break; }
         }
-
-        stopImportBtn.disabled = true;
-        importBtn.textContent = 'Importar historial 2026';
+        stopImportBtn.disabled = true; importBtn.textContent = 'Importar historial 2026';
         if (importCompletedNaturally) {
           setStatus('Enriqueciendo datos adicionales…');
           await enrichExtra();
@@ -759,18 +827,14 @@
       });
 
       exportBtn.addEventListener('click', async () => {
-        exportBtn.disabled = true;
-        setStatus('Appending new entries to Google Sheet…');
+        exportBtn.disabled = true; setStatus('Appending new entries to Google Sheet…');
         try {
-          const res = await fetch('/api/orders/export', { method: 'POST' });
+          const res  = await fetch('/api/orders/export', { method: 'POST' });
           const data = await res.json();
           if (!res.ok) throw new Error(data.error || 'Export failed.');
           setStatus(`Appended ${data.exported_rows} new rows. ${data.skipped_existing} already present.`, 'ok');
-        } catch (err) {
-          setStatus(err.message, 'err');
-        } finally {
-          exportBtn.disabled = false;
-        }
+        } catch (err) { setStatus(err.message, 'err'); }
+        finally { exportBtn.disabled = false; }
       });
 
       openBtn.addEventListener('click', () => window.open(SHEET_URL, '_blank'));
