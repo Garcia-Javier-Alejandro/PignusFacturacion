@@ -741,9 +741,16 @@
           const res = await fetch('/api/orders/clear-invoice-dates', { method: 'POST' });
           const data = await res.json();
           if (!res.ok) throw new Error(data.error || 'Error');
-          clearCacheSt.textContent = `✓ ${data.cleared} fechas eliminadas`;
-          const cacheData = await fetch('/api/orders/cache').then((r) => r.json());
+          const parts = [`${data.cleared} órdenes ML`];
+          if (data.invoice_rows_cleared) parts.push(`${data.invoice_rows_cleared} facturas no-ML`);
+          clearCacheSt.textContent = `✓ ${parts.join(' + ')} eliminadas`;
+          const [cacheData, editsData] = await Promise.all([
+            fetch('/api/orders/cache').then((r) => r.json()),
+            fetch('/api/edits').then((r) => r.json()),
+          ]);
+          editsState.invoiceRows = editsData.invoiceRows || [];
           if (cacheData.rows?.length) applyData(cacheData);
+          else renderTable({ headers: lastHeaders, rows: lastFetchedRows });
         } catch (e) {
           clearCacheSt.textContent = `Error: ${e.message}`;
         } finally {
