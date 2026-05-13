@@ -366,22 +366,19 @@
           const numFact = numFactIdx !== -1 ? (row[numFactIdx] ?? '') : '';
           const yr = compraDate.getFullYear(), mo = compraDate.getMonth();
 
-          // Card 1: ML rows only
+          // Card 1: sales count + sparkline — ML only
           if (origen === 'ML') {
-            if (yr === CURRENT_YEAR && mo === CURRENT_MONTH) {
-              salesMonth++;
-              netoMonth += neto;
-            }
-            if (yr === prevMonthYear && mo === prevMonth && compraDate.getDate() <= TODAY_DAY) {
-              salesPrevMonth++;
-              netoPrevMonth += neto;
-            }
+            if (yr === CURRENT_YEAR && mo === CURRENT_MONTH) salesMonth++;
+            if (yr === prevMonthYear && mo === prevMonth && compraDate.getDate() <= TODAY_DAY) salesPrevMonth++;
             const dayOffset = Math.floor((compraDate - cutoff30) / 86400000);
             if (dayOffset >= 0 && dayOffset < 30) {
               salesCountBuckets[dayOffset]++;
               salesNetoBuckets[dayOffset] += neto;
             }
           }
+          // Card 1: Ingresos Netos — all origins
+          if (yr === CURRENT_YEAR && mo === CURRENT_MONTH) netoMonth += neto;
+          if (yr === prevMonthYear && mo === prevMonth && compraDate.getDate() <= TODAY_DAY) netoPrevMonth += neto;
 
           // Card 2 & 3: invoiced rows, dated by Fecha Factura
           if (numFact) {
@@ -397,7 +394,7 @@
           // Pending
           if (!numFact) {
             pendingCount++;
-            pendingAmount += pago;
+            pendingAmount += neto + costo;
             if (yr === CURRENT_YEAR && mo === CURRENT_MONTH) pendingMonthCount++;
           }
         }
