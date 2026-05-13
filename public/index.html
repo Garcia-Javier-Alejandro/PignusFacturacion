@@ -471,7 +471,12 @@
             const d = parseDate(row[fechaIdx]);
             if (isNaN(d) || d < from || d > to) continue;
             sp++;
-            bp += Number(row[pagoIdx] || 0);
+            const numFact = numFactIdx !== -1 ? (row[numFactIdx] ?? '') : '';
+            if (numFact) {
+              const neto  = netoIdx  !== -1 ? Number(row[netoIdx]  || 0) : 0;
+              const costo = costoIdx !== -1 ? Number(row[costoIdx] || 0) : 0;
+              bp += neto + costo;
+            }
           }
           $('kpi-sales-period').textContent  = sp;
           $('kpi-billed-period').textContent = ars.format(bp);
