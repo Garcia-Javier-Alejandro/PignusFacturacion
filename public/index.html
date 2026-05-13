@@ -142,7 +142,7 @@
       </div>
 
       <!-- ── Table ────────────────────────────────────────────────────────── -->
-      <section id="table-section">
+      <section id="table-section" style="margin-bottom:1rem">
         <div class="table-wrap">
           <table id="orders-table" class="orders-table"></table>
         </div>
@@ -330,17 +330,15 @@
         let salesMonth = 0, salesPrevMonth = 0;
         let netoMonth  = 0, netoPrevMonth  = 0;
 
-        // Card 2 — invoiced rows only (Nº Factura set), dated by Fecha Factura
-        let factMonth = 0;
-
-        // Card 3 — all rows, Pago basis (unchanged)
-        let billedYear = 0, billedMonth = 0;
+        // Card 2 & 3 — invoiced rows only (Nº Factura set), dated by Fecha Factura
+        let factMonth = 0, factYear = 0;
 
         // Pending — rows without Nº Factura
-        let pendingCount = 0, pendingAmount = 0;
+        let pendingCount = 0, pendingAmount = 0, pendingMonthCount = 0;
 
         const prevMonth     = CURRENT_MONTH === 0 ? 11 : CURRENT_MONTH - 1;
         const prevMonthYear = CURRENT_MONTH === 0 ? CURRENT_YEAR - 1 : CURRENT_YEAR;
+        const TODAY_DAY     = NOW.getDate(); // cap prev-month window to same day of month
 
         for (const row of allRows) {
           const compraDate = new Date(row[fechaIdx]);
@@ -352,19 +350,13 @@
           const numFact = numFactIdx !== -1 ? (row[numFactIdx] ?? '') : '';
           const yr = compraDate.getFullYear(), mo = compraDate.getMonth();
 
-          // Card 3: all rows
-          if (yr === CURRENT_YEAR) {
-            billedYear += pago;
-            if (mo === CURRENT_MONTH) billedMonth += pago;
-          }
-
           // Card 1: ML rows only
           if (origen === 'ML') {
             if (yr === CURRENT_YEAR && mo === CURRENT_MONTH) {
               salesMonth++;
               netoMonth += neto;
             }
-            if (yr === prevMonthYear && mo === prevMonth) {
+            if (yr === prevMonthYear && mo === prevMonth && compraDate.getDate() <= TODAY_DAY) {
               salesPrevMonth++;
               netoPrevMonth += neto;
             }
@@ -375,13 +367,14 @@
             }
           }
 
-          // Card 2: invoiced rows, dated by Fecha Factura
+          // Card 2 & 3: invoiced rows, dated by Fecha Factura
           if (numFact) {
             const factDateStr = fechaFactIdx !== -1 ? row[fechaFactIdx] : '';
             const factDate = factDateStr ? new Date(factDateStr) : compraDate;
             const fd = isNaN(factDate) ? compraDate : factDate;
-            if (fd.getFullYear() === CURRENT_YEAR && fd.getMonth() === CURRENT_MONTH) {
-              factMonth += neto + costo;
+            if (fd.getFullYear() === CURRENT_YEAR) {
+              factYear += neto + costo;
+              if (fd.getMonth() === CURRENT_MONTH) factMonth += neto + costo;
             }
           }
 
@@ -389,6 +382,7 @@
           if (!numFact) {
             pendingCount++;
             pendingAmount += pago;
+            if (yr === CURRENT_YEAR && mo === CURRENT_MONTH) pendingMonthCount++;
           }
         }
 
@@ -403,7 +397,7 @@
             const up  = cur >= prev;
             el.textContent  = `${up ? '▲' : '▼'} ${Math.abs(pct)}%`;
             el.className    = `kpi-delta kpi-delta--${up ? 'up' : 'down'}`;
-            lbl.textContent = `vs mes anterior (${prevLabel})`;
+            lbl.textContent = `vs equivalente mes anterior (${prevLabel})`;
           } else {
             el.textContent = ''; lbl.textContent = '';
           }
@@ -416,7 +410,7 @@
         const pendingBlock = $('kpi-pending-block');
         if (pendingCount > 0) {
           $('kpi-pending-amount').textContent = ars.format(pendingAmount);
-          $('kpi-pending-count').textContent  = `${pendingCount} orden${pendingCount !== 1 ? 'es' : ''} sin facturar`;
+          $('kpi-pending-count').textContent  = `${pendingCount} orden${pendingCount !== 1 ? 'es' : ''} sin facturar (${pendingMonthCount} del mes actual)`;
           pendingBlock.style.display = '';
         } else {
           pendingBlock.style.display = 'none';
@@ -426,14 +420,14 @@
         const catKey     = $('tax-category').value;
         const catMax     = TAX_CATEGORIES[catKey] || TAX_CATEGORIES.H;
         const monthlyMax = catMax / 12;
-        const remaining  = Math.max(0, catMax - billedYear);
+        const remaining  = Math.max(0, catMax - factYear);
         $('kpi-remaining').textContent = ars.format(remaining);
 
-        const yearPct  = Math.min(100, (billedYear  / catMax)     * 100);
-        const monthPct = Math.min(100, (billedMonth / monthlyMax) * 100);
+        const yearPct  = Math.min(100, (factYear  / catMax)     * 100);
+        const monthPct = Math.min(100, (factMonth / monthlyMax) * 100);
 
-        $('bar-year-amount').textContent  = `${yearPct.toFixed(1)}%  ·  ${ars.format(billedYear)}`;
-        $('bar-month-amount').textContent = `${monthPct.toFixed(1)}%  ·  ${ars.format(billedMonth)}`;
+        $('bar-year-amount').textContent  = `${yearPct.toFixed(1)}%  ·  ${ars.format(factYear)}`;
+        $('bar-month-amount').textContent = `${monthPct.toFixed(1)}%  ·  ${ars.format(factMonth)}`;
 
         const yearFill  = $('bar-year-fill');
         const monthFill = $('bar-month-fill');
