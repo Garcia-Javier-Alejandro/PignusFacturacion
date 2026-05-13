@@ -6,8 +6,10 @@ export async function onRequestPost({ env }) {
     const cache = await getOrdersCache(env);
     let cleared = 0;
     for (const order of cache.orders) {
-      if (order._fecha_factura) {
+      if (order._fecha_factura || order._numero_factura) {
         order._fecha_factura = null;
+        order._numero_factura = null;
+        order._invoice_source = null;
         cleared++;
       }
     }

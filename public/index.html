@@ -31,24 +31,38 @@
         <!-- Card 1: Ventas -->
         <div class="kpi-card">
           <div class="kpi-card__eyebrow">Ventas este mes</div>
-          <div class="kpi-card__value" id="kpi-sales-month">—</div>
-          <div class="kpi-card__meta">
-            <span class="kpi-delta" id="kpi-sales-delta"></span>
-            <span id="kpi-sales-delta-label"></span>
+          <div style="display:flex;gap:1.25rem;flex:1;min-height:0">
+            <div style="flex:1;display:flex;flex-direction:column;gap:.3rem">
+              <div class="kpi-card__value" id="kpi-sales-month">—</div>
+              <div class="kpi-card__meta" style="margin-top:0">
+                <span class="kpi-delta" id="kpi-sales-delta"></span>
+                <span id="kpi-sales-delta-label"></span>
+              </div>
+              <svg class="kpi-spark" id="spark-sales" viewBox="0 0 200 36" preserveAspectRatio="none" style="margin-top:auto"></svg>
+            </div>
+            <div style="flex:1;display:flex;flex-direction:column;gap:.3rem;min-width:0">
+              <div class="kpi-card__eyebrow" style="color:var(--ink-2)">Ingresos Netos</div>
+              <div class="kpi-card__value" id="kpi-neto-month" style="font-size:clamp(1rem,2vw,1.5rem)">—</div>
+              <div class="kpi-card__meta" style="margin-top:0">
+                <span class="kpi-delta" id="kpi-neto-delta"></span>
+                <span id="kpi-neto-delta-label"></span>
+              </div>
+              <svg class="kpi-spark" id="spark-neto" viewBox="0 0 200 36" preserveAspectRatio="none" style="margin-top:auto"></svg>
+            </div>
           </div>
-          <svg class="kpi-spark" id="spark-sales" viewBox="0 0 200 36" preserveAspectRatio="none"></svg>
         </div>
 
         <!-- Card 2: Facturado -->
         <div class="kpi-card">
           <div class="kpi-card__eyebrow">Facturado este mes</div>
           <div class="kpi-card__value kpi-card__value--lg" id="kpi-billed-month">—</div>
-          <div class="kpi-card__meta">
-            <span class="kpi-delta" id="kpi-billed-delta"></span>
-            <span id="kpi-billed-delta-label"></span>
-            <span class="pill pill--gold" id="kpi-pending-pill" style="display:none"></span>
+          <div id="kpi-pending-block" style="display:none;margin-top:auto">
+            <div style="background:#fef3c7;border-radius:.75rem;padding:.75rem 1rem">
+              <div style="font-size:.65rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#92400e;margin-bottom:.25rem">Pendiente de facturar</div>
+              <div style="font-size:1.25rem;font-weight:700;color:#92400e;line-height:1" id="kpi-pending-amount">—</div>
+              <div style="font-size:.75rem;color:#b45309;margin-top:.3rem" id="kpi-pending-count">—</div>
+            </div>
           </div>
-          <svg class="kpi-spark" id="spark-billed" viewBox="0 0 200 36" preserveAspectRatio="none"></svg>
         </div>
 
         <!-- Card 3: Restante en categoría -->
@@ -295,102 +309,126 @@
       // ── KPI calculations ─────────────────────────────────────────────────
 
       const updateKPIs = () => {
-        const pagoIdx  = lastHeaders.indexOf('Pago');
-        const fechaIdx = lastHeaders.indexOf('Fecha Compra');
-        const factIdx  = lastHeaders.indexOf('Fecha Factura');
+        const pagoIdx     = lastHeaders.indexOf('Pago');
+        const fechaIdx    = lastHeaders.indexOf('Fecha Compra');
+        const fechaFactIdx = lastHeaders.indexOf('Fecha Factura');
+        const netoIdx     = lastHeaders.indexOf('Neto');
+        const costoIdx    = lastHeaders.indexOf('Costo Envio');
+        const origenIdx   = lastHeaders.indexOf('Orígen');
+        const numFactIdx  = lastHeaders.indexOf('Nº Factura');
         if (pagoIdx === -1 || fechaIdx === -1) return;
 
         const allRows = [...lastFetchedRows, ...getManualRows(), ...getInvoiceRows()];
 
-        // Last 30 days rolling window
         const cutoff30 = new Date(NOW);
         cutoff30.setDate(cutoff30.getDate() - 29);
 
-        // Buckets: one per day for last 30 days
-        const salesBuckets  = new Array(30).fill(0);
-        const billedBuckets = new Array(30).fill(0);
+        // Card 1 — ML sales only
+        const salesCountBuckets = new Array(30).fill(0);
+        const salesNetoBuckets  = new Array(30).fill(0);
+        let salesMonth = 0, salesPrevMonth = 0;
+        let netoMonth  = 0, netoPrevMonth  = 0;
 
-        let salesMonth = 0, billedMonth = 0, billedYear = 0;
-        let salesPrevMonth = 0, billedPrevMonth = 0;
+        // Card 2 — invoiced rows only (Nº Factura set), dated by Fecha Factura
+        let factMonth = 0;
+
+        // Card 3 — all rows, Pago basis (unchanged)
+        let billedYear = 0, billedMonth = 0;
+
+        // Pending — rows without Nº Factura
         let pendingCount = 0, pendingAmount = 0;
 
         const prevMonth     = CURRENT_MONTH === 0 ? 11 : CURRENT_MONTH - 1;
         const prevMonthYear = CURRENT_MONTH === 0 ? CURRENT_YEAR - 1 : CURRENT_YEAR;
 
         for (const row of allRows) {
-          const d = new Date(row[fechaIdx]);
-          if (isNaN(d)) continue;
-          const pago = Number(row[pagoIdx] || 0);
-          const yr = d.getFullYear(), mo = d.getMonth();
+          const compraDate = new Date(row[fechaIdx]);
+          if (isNaN(compraDate)) continue;
+          const pago   = Number(row[pagoIdx]  || 0);
+          const neto   = netoIdx  !== -1 ? Number(row[netoIdx]  || 0) : 0;
+          const costo  = costoIdx !== -1 ? Number(row[costoIdx] || 0) : 0;
+          const origen = origenIdx !== -1 ? (row[origenIdx] ?? '') : '';
+          const numFact = numFactIdx !== -1 ? (row[numFactIdx] ?? '') : '';
+          const yr = compraDate.getFullYear(), mo = compraDate.getMonth();
 
+          // Card 3: all rows
           if (yr === CURRENT_YEAR) {
             billedYear += pago;
-            if (mo === CURRENT_MONTH) {
+            if (mo === CURRENT_MONTH) billedMonth += pago;
+          }
+
+          // Card 1: ML rows only
+          if (origen === 'ML') {
+            if (yr === CURRENT_YEAR && mo === CURRENT_MONTH) {
               salesMonth++;
-              billedMonth += pago;
+              netoMonth += neto;
+            }
+            if (yr === prevMonthYear && mo === prevMonth) {
+              salesPrevMonth++;
+              netoPrevMonth += neto;
+            }
+            const dayOffset = Math.floor((compraDate - cutoff30) / 86400000);
+            if (dayOffset >= 0 && dayOffset < 30) {
+              salesCountBuckets[dayOffset]++;
+              salesNetoBuckets[dayOffset] += neto;
             }
           }
-          if (yr === prevMonthYear && mo === prevMonth) {
-            salesPrevMonth++;
-            billedPrevMonth += pago;
-          }
 
-          // 30-day bucket
-          const dayOffset = Math.floor((d - cutoff30) / 86400000);
-          if (dayOffset >= 0 && dayOffset < 30) {
-            salesBuckets[dayOffset]++;
-            billedBuckets[dayOffset] += pago;
-          }
-
-          // Pending (no Fecha Factura)
-          if (factIdx !== -1) {
-            const fv = row[factIdx];
-            if (!fv || fv === '') {
-              pendingCount++;
-              pendingAmount += pago;
+          // Card 2: invoiced rows, dated by Fecha Factura
+          if (numFact) {
+            const factDateStr = fechaFactIdx !== -1 ? row[fechaFactIdx] : '';
+            const factDate = factDateStr ? new Date(factDateStr) : compraDate;
+            const fd = isNaN(factDate) ? compraDate : factDate;
+            if (fd.getFullYear() === CURRENT_YEAR && fd.getMonth() === CURRENT_MONTH) {
+              factMonth += neto + costo;
             }
+          }
+
+          // Pending
+          if (!numFact) {
+            pendingCount++;
+            pendingAmount += pago;
           }
         }
 
-        // Sales card
+        // Card 1 — Ventas
         $('kpi-sales-month').textContent = salesMonth;
-        const salesDeltaEl = $('kpi-sales-delta');
-        const salesLabelEl = $('kpi-sales-delta-label');
-        if (salesPrevMonth > 0) {
-          const pct = ((salesMonth - salesPrevMonth) / salesPrevMonth * 100).toFixed(1);
-          const up  = salesMonth >= salesPrevMonth;
-          salesDeltaEl.textContent  = `${up ? '▲' : '▼'} ${Math.abs(pct)}%`;
-          salesDeltaEl.className    = `kpi-delta kpi-delta--${up ? 'up' : 'down'}`;
-          salesLabelEl.textContent  = `vs mes anterior (${salesPrevMonth})`;
-        }
+        $('kpi-neto-month').textContent  = ars.format(netoMonth);
 
-        // Facturado card
-        $('kpi-billed-month').textContent = ars.format(billedMonth);
-        const billedDeltaEl = $('kpi-billed-delta');
-        const billedLabelEl = $('kpi-billed-delta-label');
-        if (billedPrevMonth > 0) {
-          const pct = ((billedMonth - billedPrevMonth) / billedPrevMonth * 100).toFixed(1);
-          const up  = billedMonth >= billedPrevMonth;
-          billedDeltaEl.textContent = `${up ? '▲' : '▼'} ${Math.abs(pct)}%`;
-          billedDeltaEl.className   = `kpi-delta kpi-delta--${up ? 'up' : 'down'}`;
-          billedLabelEl.textContent = `vs mes anterior`;
-        }
-        const pillEl = $('kpi-pending-pill');
+        const setDelta = (deltaId, labelId, cur, prev, prevLabel) => {
+          const el = $(deltaId), lbl = $(labelId);
+          if (prev > 0) {
+            const pct = ((cur - prev) / prev * 100).toFixed(1);
+            const up  = cur >= prev;
+            el.textContent  = `${up ? '▲' : '▼'} ${Math.abs(pct)}%`;
+            el.className    = `kpi-delta kpi-delta--${up ? 'up' : 'down'}`;
+            lbl.textContent = `vs mes anterior (${prevLabel})`;
+          } else {
+            el.textContent = ''; lbl.textContent = '';
+          }
+        };
+        setDelta('kpi-sales-delta', 'kpi-sales-delta-label', salesMonth, salesPrevMonth, salesPrevMonth);
+        setDelta('kpi-neto-delta',  'kpi-neto-delta-label',  netoMonth,  netoPrevMonth,  ars.format(netoPrevMonth));
+
+        // Card 2 — Facturado
+        $('kpi-billed-month').textContent = ars.format(factMonth);
+        const pendingBlock = $('kpi-pending-block');
         if (pendingCount > 0) {
-          pillEl.textContent  = `${pendingCount} pendientes · ${ars.format(pendingAmount)}`;
-          pillEl.style.display = '';
+          $('kpi-pending-amount').textContent = ars.format(pendingAmount);
+          $('kpi-pending-count').textContent  = `${pendingCount} orden${pendingCount !== 1 ? 'es' : ''} sin facturar`;
+          pendingBlock.style.display = '';
         } else {
-          pillEl.style.display = 'none';
+          pendingBlock.style.display = 'none';
         }
 
-        // Tax category card
-        const catKey    = $('tax-category').value;
-        const catMax    = TAX_CATEGORIES[catKey] || TAX_CATEGORIES.H;
+        // Card 3 — Tax category
+        const catKey     = $('tax-category').value;
+        const catMax     = TAX_CATEGORIES[catKey] || TAX_CATEGORIES.H;
         const monthlyMax = catMax / 12;
-        const remaining = Math.max(0, catMax - billedYear);
+        const remaining  = Math.max(0, catMax - billedYear);
         $('kpi-remaining').textContent = ars.format(remaining);
 
-        const yearPct  = Math.min(100, (billedYear  / catMax)    * 100);
+        const yearPct  = Math.min(100, (billedYear  / catMax)     * 100);
         const monthPct = Math.min(100, (billedMonth / monthlyMax) * 100);
 
         $('bar-year-amount').textContent  = `${yearPct.toFixed(1)}%  ·  ${ars.format(billedYear)}`;
@@ -403,9 +441,9 @@
         yearFill.className  = `kpi-bar-row__fill${yearPct  >= 90 ? ' kpi-bar-row__fill--err' : yearPct  >= 70 ? ' kpi-bar-row__fill--warn' : ''}`;
         monthFill.className = `kpi-bar-row__fill${monthPct >= 90 ? ' kpi-bar-row__fill--err' : monthPct >= 70 ? ' kpi-bar-row__fill--warn' : ''}`;
 
-        // Sparklines
-        drawSparkline($('spark-sales'),  salesBuckets);
-        drawSparkline($('spark-billed'), billedBuckets, '#d97706');
+        // Sparklines — card 1 only
+        drawSparkline($('spark-sales'), salesCountBuckets);
+        drawSparkline($('spark-neto'),  salesNetoBuckets, '#15803d');
 
         // Period
         const fromEl = $('period-from');
@@ -697,7 +735,7 @@
 
       $('clear-dates-btn').addEventListener('click', async () => {
         clearCacheSt.textContent = '';
-        if (!confirm('¿Limpiar todas las Fechas Factura del caché? Los estados volverán a Pendiente hasta reimportar Contabilium.')) return;
+        if (!confirm('¿Limpiar datos de Contabilium del caché? Fecha Factura y Nº Factura se borrarán. Los estados volverán a Pendiente hasta reimportar.')) return;
         $('clear-dates-btn').disabled = true;
         try {
           const res = await fetch('/api/orders/clear-invoice-dates', { method: 'POST' });
