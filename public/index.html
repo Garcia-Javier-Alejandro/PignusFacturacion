@@ -456,9 +456,10 @@
         $('kpi-remaining').textContent = ars.format(remaining);
 
         pendingForLimit.sort((a, b) => a.date - b.date);
+        const invoiceableLimit = Math.max(0, monthlyMax - factMonth);
         let invoiceableAcc = 0, invoiceableCount = 0, invoiceableCutoffDate = null;
         for (const { amount, date } of pendingForLimit) {
-          if (invoiceableAcc + amount > remaining) break;
+          if (invoiceableAcc + amount > invoiceableLimit) break;
           invoiceableAcc += amount;
           invoiceableCount++;
           invoiceableCutoffDate = date;
@@ -466,8 +467,8 @@
         const invLine = $('kpi-invoiceable-line');
         if (invoiceableCount < pendingCount) {
           $('kpi-invoiceable-text').textContent = invoiceableCount === 0
-            ? `Ninguna orden es facturable sin exceder Cat. ${catKey}`
-            : `Las ${invoiceableCount} orden${invoiceableCount !== 1 ? 'es' : ''} con fecha de compra hasta el ${formatDate(invoiceableCutoffDate)} son facturables sin exceder Cat. ${catKey}`;
+            ? `Ninguna orden es facturable sin exceder el cupo mensual de Cat. ${catKey}`
+            : `Las ${invoiceableCount} orden${invoiceableCount !== 1 ? 'es' : ''} con fecha de compra hasta el ${formatDate(invoiceableCutoffDate)} son facturables sin exceder el cupo mensual de Cat. ${catKey}`;
           invLine.style.display = 'block';
         } else {
           invLine.style.display = 'none';
@@ -705,7 +706,7 @@
             const _cIdx   = headers.indexOf('Costo Envio');
             const _fIdx   = headers.indexOf('Fecha Compra');
             const _ffIdx  = headers.indexOf('Fecha Factura');
-            let _factYear = 0;
+            let _factMonth = 0;
             for (const r of [...rows, ...getManualRows(), ...getInvoiceRows()]) {
               const nf = _nfIdx !== -1 ? (r[_nfIdx] ?? '') : '';
               if (!nf) continue;
@@ -715,9 +716,10 @@
               const c = _cIdx !== -1 ? Number(r[_cIdx] || 0) : 0;
               const fs = _ffIdx !== -1 ? r[_ffIdx] : '';
               const fd = fs ? parseDate(fs) : d;
-              if ((isNaN(fd) ? d : fd).getFullYear() === CURRENT_YEAR) _factYear += n + c;
+              const fdt = isNaN(fd) ? d : fd;
+              if (fdt.getFullYear() === CURRENT_YEAR && fdt.getMonth() === CURRENT_MONTH) _factMonth += n + c;
             }
-            const _remaining = Math.max(0, _catMax - _factYear);
+            const _remaining = Math.max(0, _catMax / 12 - _factMonth);
             const _pending = [];
             for (const { row: r, rowId: rid } of allDisplayRows) {
               const nf = _nfIdx !== -1 ? (r[_nfIdx] ?? '') : '';
