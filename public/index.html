@@ -75,9 +75,9 @@
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
               <span id="kpi-pending-count"></span>
             </div>
-            <div id="kpi-invoiceable-line" style="display:none;margin-top:.5rem;padding-top:.4rem;border-top:1px solid rgba(0,0,0,.08);font-size:.72rem;color:var(--pending-fg)">
-              <span id="kpi-invoiceable-text"></span>
-            </div>
+          </div>
+          <div id="kpi-invoiceable-line" style="display:none;margin-top:.6rem;font-size:.72rem;color:var(--ink-3);text-align:center">
+            <span id="kpi-invoiceable-text"></span>
           </div>
         </div>
 
@@ -464,9 +464,9 @@
           invoiceableCutoffDate = date;
         }
         const invLine = $('kpi-invoiceable-line');
-        if (pendingCount > 0 && invoiceableCount > 0 && invoiceableCount < pendingCount) {
+        if (invoiceableCount > 0 && invoiceableCount < pendingCount) {
           $('kpi-invoiceable-text').textContent = `Las ${invoiceableCount} orden${invoiceableCount !== 1 ? 'es' : ''} con fecha de compra hasta el ${formatDate(invoiceableCutoffDate)} son facturables sin exceder Cat. ${catKey}`;
-          invLine.style.display = '';
+          invLine.style.display = 'block';
         } else {
           invLine.style.display = 'none';
         }
