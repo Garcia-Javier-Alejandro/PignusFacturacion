@@ -76,7 +76,7 @@
               <span id="kpi-pending-count"></span>
             </div>
             <div id="kpi-invoiceable-line" style="display:none;margin-top:.5rem;padding-top:.4rem;border-top:1px solid rgba(0,0,0,.08);font-size:.72rem;color:var(--pending-fg)">
-              Facturable: <strong id="kpi-invoiceable-amount"></strong> · <span id="kpi-invoiceable-count"></span>
+              <span id="kpi-invoiceable-text"></span>
             </div>
           </div>
         </div>
@@ -456,16 +456,16 @@
         $('kpi-remaining').textContent = ars.format(remaining);
 
         pendingForLimit.sort((a, b) => a.date - b.date);
-        let invoiceableAcc = 0, invoiceableCount = 0;
-        for (const { amount } of pendingForLimit) {
+        let invoiceableAcc = 0, invoiceableCount = 0, invoiceableCutoffDate = null;
+        for (const { amount, date } of pendingForLimit) {
           if (invoiceableAcc + amount > remaining) break;
           invoiceableAcc += amount;
           invoiceableCount++;
+          invoiceableCutoffDate = date;
         }
         const invLine = $('kpi-invoiceable-line');
-        if (pendingCount > 0 && invoiceableCount > 0) {
-          $('kpi-invoiceable-amount').textContent = ars.format(invoiceableAcc);
-          $('kpi-invoiceable-count').textContent  = `${invoiceableCount} orden${invoiceableCount !== 1 ? 'es' : ''} sin exceder Cat. ${catKey}`;
+        if (pendingCount > 0 && invoiceableCount > 0 && invoiceableCount < pendingCount) {
+          $('kpi-invoiceable-text').textContent = `Las ${invoiceableCount} orden${invoiceableCount !== 1 ? 'es' : ''} con fecha de compra hasta el ${formatDate(invoiceableCutoffDate)} son facturables sin exceder Cat. ${catKey}`;
           invLine.style.display = '';
         } else {
           invLine.style.display = 'none';
@@ -733,6 +733,8 @@
               _acc += amount;
               invoiceableIds.add(rid);
             }
+            // No cutoff — all fit; suppress the signal so pills stay plain "Pendiente"
+            if (invoiceableIds.size === _pending.length) invoiceableIds = new Set();
           }
 
           for (const { row, rowId, isManual } of allDisplayRows) {
