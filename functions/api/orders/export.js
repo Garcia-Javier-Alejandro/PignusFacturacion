@@ -11,11 +11,16 @@ export async function onRequestPost({ env }) {
       env.PIGNUS_TOKENS.get('edits', 'json').then((e) => e || { invoiceRows: [] }),
     ]);
 
+    const sortedOrders = [...(cache.orders || [])].sort(
+      (a, b) => (a.date_created > b.date_created ? 1 : -1),
+    );
     const allRows = [
-      ...transformOrdersToRows(cache.orders || []),
+      ...transformOrdersToRows(sortedOrders),
       ...(edits.invoiceRows || []),
     ];
-    allRows.sort((a, b) => (b[1] > a[1] ? 1 : -1));
+    // Stable ascending sort by date string; within the same day, cache rows keep
+    // their date_created time order from the pre-sort above.
+    allRows.sort((a, b) => (a[1] > b[1] ? 1 : -1));
 
     const newRows = allRows.filter((row) => !existingOrderIds.has(String(row[0])));
     const toAppend = existingOrderIds.size === 0
