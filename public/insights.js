@@ -397,13 +397,14 @@
   function renderSkuTable(m) {
     const el = $('ins-sku');
     if (!el) return;
-    if (!m.skuRows.length) {
+    const realRows = m.skuRows.filter((r) => r.sku !== 'Sin SKU');
+    if (!realRows.length) {
       el.innerHTML = ey('Top SKUs') +
         `<span style="font-size:.8rem;color:var(--ink-3)">Disponible después de importar historial con datos de SKU</span>`;
       return;
     }
 
-    const sorted = [...m.skuRows]
+    const sorted = [...realRows]
       .sort((a, b) => {
         const va = a[skuSort.col], vb = b[skuSort.col];
         return skuSort.dir === 'desc' ? vb - va : va - vb;
@@ -411,9 +412,12 @@
       .slice(0, 20);
 
     const arrow = (col) => skuSort.col === col ? (skuSort.dir === 'desc' ? ' ↓' : ' ↑') : '';
-    const thClick = (col) => `style="cursor:pointer;user-select:none;${thSt};text-align:right" onclick="(function(){` +
-      `window._skuSort=${JSON.stringify({ col, dir: skuSort.col === col && skuSort.dir === 'desc' ? 'asc' : 'desc' })};` +
-      `window.dispatchEvent(new CustomEvent('sku-sort'))})();"`;
+    const thClick = (col) => {
+      const dir = skuSort.col === col && skuSort.dir === 'desc' ? 'asc' : 'desc';
+      return `style="cursor:pointer;user-select:none;${thSt};text-align:right" onclick="(function(){` +
+        `window._skuSort={'col':'${col}','dir':'${dir}'};` +
+        `window.dispatchEvent(new CustomEvent('sku-sort'))})();"`;
+    };
 
     const rows = sorted.map(({ sku, title, units, revenue }, i) =>
       `<tr>
@@ -563,7 +567,8 @@
     renderSkuTable(m);
 
     // ── Evolución del mix ───────────────────────────────────────────────────────
-    if (m.mixTopSkus.length) {
+    const mixHasRealSkus = m.mixTopSkus.length && !(m.mixTopSkus.length === 1 && m.mixTopSkus[0] === 'Sin SKU');
+    if (mixHasRealSkus) {
       const legend = [...m.mixTopSkus, 'Otros'].map((s, i) =>
         `<span style="display:inline-flex;align-items:center;gap:.3rem;font-size:.72rem;margin-right:.8rem">
           <span style="width:8px;height:8px;border-radius:2px;background:${SKU_COLORS[i]};flex-shrink:0"></span>${s}
@@ -574,7 +579,7 @@
           ${svgStackedBars(m.mixMonths, m.mixTopSkus, m.monthData, 400, 120)}
         </svg>`;
     } else {
-      $('ins-mix').innerHTML = ey('Evolución del mix') +
+      $('ins-mix').innerHTML = ey('Evolución del mix — unidades por mes (últimos 12 meses, top 5 SKUs)') +
         `<span style="font-size:.8rem;color:var(--ink-3)">Disponible después de importar historial con datos de SKU</span>`;
     }
 
