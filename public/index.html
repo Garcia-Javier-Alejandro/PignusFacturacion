@@ -144,14 +144,7 @@
 
       <!-- ── Toolbar ──────────────────────────────────────────────────────── -->
       <div class="toolbar">
-        <div class="toolbar-left">
-          <button id="add-row-btn" type="button" class="btn btn--primary">+ Agregar fila</button>
-        </div>
         <p id="status" class="status" aria-live="polite"></p>
-        <div class="toolbar-right">
-          <button id="export-btn" type="button" class="btn btn--secondary" disabled>Añadir a Sheets</button>
-          <button id="open-btn" type="button" class="btn btn--secondary" disabled>↗ Abrir Sheets</button>
-        </div>
       </div>
 
       <!-- ── Table ────────────────────────────────────────────────────────── -->
@@ -163,7 +156,9 @@
 
       <!-- ── Import bar ────────────────────────────────────────────────────── -->
       <div class="meta-bar" id="meta-bar">
-        <button id="today-btn" type="button" class="btn btn--primary">Cargar hoy</button>
+        <button id="add-row-btn" type="button" class="btn btn--secondary">+ Agregar fila</button>
+        <span class="meta-sep">·</span>
+        <button id="today-btn" type="button" class="btn btn--primary">Cargar pedidos de hoy</button>
         <span class="meta-sep">·</span>
         <button id="contabilium-btn" type="button" class="btn btn--secondary">📄 Contabilium</button>
         <input type="file" id="contabilium-file" accept=".xlsx" hidden>
@@ -177,6 +172,8 @@
           <span id="progress-text">0%</span>
           <span class="progress-label">de 2026</span>
         </div>
+        <span class="meta-sep">·</span>
+        <button id="export-btn" type="button" class="btn btn--secondary" disabled>↗ Añadir a Sheets</button>
         <button id="expand-btn" type="button" class="btn btn--ghost btn--expand">Expandir →</button>
       </div>
 
@@ -292,7 +289,6 @@
       const clearCacheSt    = $('clear-cache-status');
       const table           = $('orders-table');
       const exportBtn       = $('export-btn');
-      const openBtn         = $('open-btn');
       const statusEl        = $('status');
       const metaCount       = $('meta-count');
       const metaOldest      = $('meta-oldest');
@@ -436,7 +432,7 @@
         const pendingBlock = $('kpi-pending-block');
         if (pendingCount > 0) {
           $('kpi-pending-amount').textContent = ars.format(pendingAmount);
-          $('kpi-pending-count').textContent  = `${pendingCount} orden${pendingCount !== 1 ? 'es' : ''} sin facturar (${pendingMonthCount} del mes actual)`;
+          $('kpi-pending-count').textContent  = `${pendingCount} pedido${pendingCount !== 1 ? 's' : ''} sin facturar (${pendingMonthCount} del mes actual)`;
           pendingBlock.style.display = '';
         } else {
           pendingBlock.style.display = 'none';
@@ -461,8 +457,8 @@
         const invLine = $('kpi-invoiceable-line');
         if (invoiceableCount < pendingCount) {
           $('kpi-invoiceable-text').textContent = invoiceableCount === 0
-            ? `Ninguna orden es facturable sin exceder el cupo mensual de Cat. ${catKey}`
-            : `Las ${invoiceableCount} orden${invoiceableCount !== 1 ? 'es' : ''} con fecha de compra hasta el ${formatDate(invoiceableCutoffDate)} son facturables sin exceder el cupo mensual de Cat. ${catKey}`;
+            ? `Ningún pedido es facturable sin exceder el cupo mensual de Cat. ${catKey}`
+            : `Los ${invoiceableCount} pedido${invoiceableCount !== 1 ? 's' : ''} con fecha de compra hasta el ${formatDate(invoiceableCutoffDate)} son facturables sin exceder el cupo mensual de Cat. ${catKey}`;
           invLine.style.display = 'block';
         } else {
           invLine.style.display = 'none';
@@ -513,7 +509,7 @@
       const updateMeta = (meta) => {
         if (!meta) return;
         const pct = calcProgress(meta.oldest_date);
-        metaCount.textContent  = `${meta.loaded} órdenes`;
+        metaCount.textContent  = `${meta.loaded} pedidos`;
         metaOldest.textContent = `Más antigua: ${formatDate(meta.oldest_date) || '—'}`;
         progressFill.style.width  = `${pct}%`;
         progressText.textContent  = `${pct}%`;
@@ -650,7 +646,7 @@
           const td = document.createElement('td');
           td.colSpan = visibleCols.length + 1; // +1 for the row-actions column
           td.className = 'empty';
-          td.textContent = 'No hay órdenes cargadas.';
+          td.textContent = 'No hay pedidos cargados.';
           tr.append(td);
           tbody.append(tr);
         } else {
@@ -889,7 +885,7 @@
       // ── Add row ───────────────────────────────────────────────────────────
       addRowBtn.addEventListener('click', () => {
         table.querySelector('tr.edit-row')?.remove();
-        if (!lastHeaders.length) { setStatus('Cargá órdenes primero.', 'err'); return; }
+        if (!lastHeaders.length) { setStatus('Cargá pedidos primero.', 'err'); return; }
         const defaults = lastHeaders.map((h) => h === 'Orígen' ? 'MANUAL' : '');
         const { tr, inputs } = buildEditRow(
           lastHeaders, defaults,
@@ -964,7 +960,7 @@
         lastFetchedRows = data.rows || [];
         if (data.sheet_url) SHEET_URL = data.sheet_url;
         renderTable(data);
-        exportBtn.disabled = false; openBtn.disabled = false;
+        exportBtn.disabled = false;
         updateMeta(data.meta);
         updateKPIs();
       };
@@ -987,7 +983,7 @@
       loadFromCache();
 
       todayBtn.addEventListener('click', async () => {
-        todayBtn.disabled = true; setStatus('Cargando órdenes de hoy…');
+        todayBtn.disabled = true; setStatus('Cargando pedidos de hoy…');
         try {
           const res  = await fetch('/api/orders/today');
           const data = await res.json();
@@ -1001,7 +997,7 @@
           if (nAyer > 0) parts.push(`${nAyer} de ayer`);
           const label = parts.length ? parts.join(' · ') : '0';
           const total = nHoy + nAyer;
-          setStatus(`${label} orden${total !== 1 ? 'es' : ''} cargadas.`, 'ok');
+          setStatus(`${label} pedido${total !== 1 ? 's' : ''} cargados.`, 'ok');
           await enrichExtra();
         } catch (err) { setStatus(err.message, 'err'); }
         finally { todayBtn.disabled = false; }
@@ -1025,7 +1021,7 @@
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || 'Error loading older orders.');
             applyData(data);
-            setStatus(`Importando… ${data.meta.loaded} órdenes — más antigua: ${formatDate(data.meta.oldest_date)}`);
+            setStatus(`Importando… ${data.meta.loaded} pedidos — más antigua: ${formatDate(data.meta.oldest_date)}`);
             if (data.meta.done) { importCompletedNaturally = true; importRunning = false; break; }
             await new Promise((r) => setTimeout(r, 2000));
           } catch (err) { setStatus(err.message, 'err'); importRunning = false; break; }
@@ -1039,17 +1035,17 @@
       });
 
       exportBtn.addEventListener('click', async () => {
-        exportBtn.disabled = true; setStatus('Appending new entries to Google Sheet…');
+        exportBtn.disabled = true; setStatus('Añadiendo a Sheets…');
         try {
           const res  = await fetch('/api/orders/export', { method: 'POST' });
           const data = await res.json();
-          if (!res.ok) throw new Error(data.error || 'Export failed.');
-          setStatus(`Appended ${data.exported_rows} new rows. ${data.skipped_existing} already present.`, 'ok');
+          if (!res.ok) throw new Error(data.error || 'Error al exportar.');
+          if (data.sheet_url) SHEET_URL = data.sheet_url;
+          setStatus(`${data.exported_rows} filas nuevas añadidas. ${data.skipped_existing} ya presentes.`, 'ok');
+          window.open(SHEET_URL, '_blank');
         } catch (err) { setStatus(err.message, 'err'); }
         finally { exportBtn.disabled = false; }
       });
-
-      openBtn.addEventListener('click', () => window.open(SHEET_URL, '_blank'));
       $('auth-btn').addEventListener('click', () => { window.location.href = '/api/meli/login'; });
 
       const autoFmtDate = (e) => {
