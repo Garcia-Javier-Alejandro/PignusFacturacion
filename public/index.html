@@ -167,6 +167,8 @@
           <span id="fetch-label">+ Cargar pedidos</span>
         </button>
         <span class="meta-sep">·</span>
+        <button id="today-btn" type="button" class="btn btn--secondary">Cargar hoy</button>
+        <span class="meta-sep">·</span>
         <button id="import-btn" type="button" class="btn btn--secondary">Importar historial 2026</button>
         <button id="stop-import-btn" type="button" class="btn btn--danger" disabled>⏹ Detener</button>
         <span class="meta-sep">·</span>
@@ -290,6 +292,7 @@
 
       const fetchBtn        = $('fetch-btn');
       const fetchLbl        = $('fetch-label');
+      const todayBtn        = $('today-btn');
       const importBtn       = $('import-btn');
       const addRowBtn       = $('add-row-btn');
       const expandBtn       = $('expand-btn');
@@ -1005,6 +1008,22 @@
           await enrichExtra();
         } catch (err) { setStatus(err.message, 'err'); }
         finally { fetchBtn.disabled = false; fetchLbl.textContent = '+ Cargar pedidos'; }
+      });
+
+      todayBtn.addEventListener('click', async () => {
+        todayBtn.disabled = true; setStatus('Cargando órdenes de hoy…');
+        try {
+          const res  = await fetch('/api/orders/today');
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || 'Error al cargar.');
+          applyData(data);
+          setLastSync(new Date().toISOString());
+          const n = data.fetched_today ?? 0;
+          const extra = data.total_today > n ? ` · ${data.total_today - n} no incluidas (límite 50)` : '';
+          setStatus(`${n} orden${n !== 1 ? 'es' : ''} de hoy cargadas${extra}.`, 'ok');
+          await enrichExtra();
+        } catch (err) { setStatus(err.message, 'err'); }
+        finally { todayBtn.disabled = false; }
       });
 
       let importRunning = false, importCompletedNaturally = false;
