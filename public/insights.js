@@ -92,9 +92,10 @@
 
   // ── Map state ────────────────────────────────────────────────────────────────
 
-  let leafletMap     = null;
-  let markerLayer    = null;
-  let geoCachePromise = null;
+  let leafletMap       = null;
+  let markerLayer      = null;
+  let geoCachePromise  = null;
+  let pendingMapMetrics = null; // set when renderMap is called while <details> is closed
 
   const fetchGeoData = () => {
     if (!geoCachePromise) {
@@ -241,6 +242,14 @@
 
   async function renderMap(m) {
     if (typeof L === 'undefined' || !m.cityMap.size) return;
+
+    // If the <details> is currently closed, defer until the user opens it
+    const detailsEl = document.getElementById('insights');
+    if (detailsEl && !detailsEl.open) {
+      pendingMapMetrics = m;
+      return;
+    }
+    pendingMapMetrics = null;
 
     if (!leafletMap) {
       const container = document.getElementById('ins-map-container');
@@ -432,11 +441,16 @@
     if (d) render(compute(d));
   });
 
-  // Leaflet needs invalidateSize() after the <details> is opened from a hidden state
+  // When the <details> opens: fix Leaflet if already initialised, or run the deferred first render
   const insDetails = document.getElementById('insights');
   if (insDetails) {
     insDetails.addEventListener('toggle', () => {
-      if (insDetails.open && leafletMap) leafletMap.invalidateSize();
+      if (!insDetails.open) return;
+      if (leafletMap) {
+        leafletMap.invalidateSize();
+      } else if (pendingMapMetrics) {
+        renderMap(pendingMapMetrics).catch(() => {});
+      }
     });
   }
 })();
