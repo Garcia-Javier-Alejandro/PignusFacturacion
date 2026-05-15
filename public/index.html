@@ -163,11 +163,7 @@
 
       <!-- ── Import bar ────────────────────────────────────────────────────── -->
       <div class="meta-bar" id="meta-bar">
-        <button id="fetch-btn" type="button" class="btn btn--primary">
-          <span id="fetch-label">+ Cargar pedidos</span>
-        </button>
-        <span class="meta-sep">·</span>
-        <button id="today-btn" type="button" class="btn btn--secondary">Cargar hoy</button>
+        <button id="today-btn" type="button" class="btn btn--primary">Cargar hoy</button>
         <span class="meta-sep">·</span>
         <button id="import-btn" type="button" class="btn btn--secondary">Importar historial 2026</button>
         <button id="stop-import-btn" type="button" class="btn btn--danger" disabled>⏹ Detener</button>
@@ -290,8 +286,6 @@
         $('header-pulse').style.display = '';
       };
 
-      const fetchBtn        = $('fetch-btn');
-      const fetchLbl        = $('fetch-label');
       const todayBtn        = $('today-btn');
       const importBtn       = $('import-btn');
       const addRowBtn       = $('add-row-btn');
@@ -995,21 +989,6 @@
 
       loadFromCache();
 
-      fetchBtn.addEventListener('click', async () => {
-        fetchBtn.disabled = true; fetchLbl.textContent = 'Fetching…'; setStatus('Loading orders…');
-        try {
-          const res  = await fetch('/api/orders/recent', {});
-          const data = await res.json();
-          if (!res.ok) throw new Error(data.error || 'Request failed.');
-          applyData(data);
-          setLastSync(new Date().toISOString());
-          const n = data.meta?.loaded ?? data.rows.length;
-          setStatus(`${n} order${n !== 1 ? 's' : ''} loaded.`, 'ok');
-          await enrichExtra();
-        } catch (err) { setStatus(err.message, 'err'); }
-        finally { fetchBtn.disabled = false; fetchLbl.textContent = '+ Cargar pedidos'; }
-      });
-
       todayBtn.addEventListener('click', async () => {
         todayBtn.disabled = true; setStatus('Cargando órdenes de hoy…');
         try {
@@ -1019,7 +998,8 @@
           applyData(data);
           setLastSync(new Date().toISOString());
           const n = data.fetched_today ?? 0;
-          const extra = data.total_today > n ? ` · ${data.total_today - n} no incluidas (límite 50)` : '';
+          const total = data.total_today ?? n;
+          const extra = total > n ? ` (${total} en total, se muestran las primeras ${n})` : '';
           setStatus(`${n} orden${n !== 1 ? 'es' : ''} de hoy cargadas${extra}.`, 'ok');
           await enrichExtra();
         } catch (err) { setStatus(err.message, 'err'); }

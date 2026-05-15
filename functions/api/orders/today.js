@@ -33,8 +33,8 @@ export async function onRequestGet({ env }) {
     // Fetch orders closed today (ML max per page = 50)
     const url = new URL('https://api.mercadolibre.com/orders/search');
     url.searchParams.set('seller', sellerId);
-    url.searchParams.set('date_closed.from', from);
-    url.searchParams.set('date_closed.to', to);
+    url.searchParams.set('date_created.from', from);
+    url.searchParams.set('date_created.to', to);
     url.searchParams.set('sort', 'date_asc');
     url.searchParams.set('limit', '50');
 
