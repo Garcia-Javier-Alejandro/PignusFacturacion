@@ -86,11 +86,11 @@
   ]);
 
   // TODO: international orders that bypass ML entirely are not in this dataset; wire in when that data source is available
-  const CHANNEL_COLORS = { ML: '#1d4ed8', DIRECTO: '#a27a2a', MANUAL: '#9c8f84' };
+  const CHANNEL_COLORS = { ML: '#1BBFA1', DIRECTO: '#a27a2a', MANUAL: '#9c8f84' };
 
   const WEEKDAY_LABELS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 
-  const SKU_COLORS  = ['#1d4ed8', '#a27a2a', '#1a6b2a', '#9c8f84', '#c23b22', '#c8bfa8'];
+  const SKU_COLORS  = ['#1BBFA1', '#a27a2a', '#1a6b2a', '#9c8f84', '#c23b22', '#c8bfa8'];
   const MONTH_NAMES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 
   function svgStackedBars(months, topSkus, monthData, W, H) {
@@ -374,9 +374,9 @@
 
       L.circleMarker(coords, {
         radius,
-        fillColor:   '#1d4ed8',
+        fillColor:   '#1BBFA1',
         fillOpacity: opacity,
-        color:       '#1d4ed8',
+        color:       '#1BBFA1',
         weight:      isFallback ? 1 : 0,
         dashArray:   isFallback ? '3 3' : undefined,
       })
@@ -485,7 +485,7 @@
     // ── Día de la semana ────────────────────────────────────────────────────
     $('ins-weekday').innerHTML = `${ey('Pedidos por día de la semana')}
       <svg viewBox="0 0 280 80" width="100%" style="display:block;overflow:visible;margin-top:.25rem">
-        ${svgBars(m.weekday, WEEKDAY_LABELS, '#1d4ed8', 280, 80)}
+        ${svgBars(m.weekday, WEEKDAY_LABELS, '#1BBFA1', 280, 80)}
       </svg>`;
 
     // ── Velocidad ───────────────────────────────────────────────────────────
@@ -499,7 +499,7 @@
     $('ins-velocity').innerHTML = `${ey('Velocidad de pedidos — media móvil (últimos 90 días)')}
       <div style="display:flex;gap:2rem;margin-bottom:.35rem">
         <span>
-          <span style="display:inline-block;width:10px;height:2px;background:#1d4ed8;vertical-align:middle;margin-right:.3rem"></span>
+          <span style="display:inline-block;width:10px;height:2px;background:#1BBFA1;vertical-align:middle;margin-right:.3rem"></span>
           <span style="font-size:.72rem;color:var(--ink-3)">Media 7d: </span>
           <span style="font-size:.8rem;font-weight:600">${lastR7 != null ? lastR7.toFixed(1) + ' ped/día' : '—'}</span>
         </span>
@@ -511,7 +511,7 @@
       </div>
       <svg viewBox="0 0 400 64" width="100%" style="display:block">
         ${svgPolyline(m.velR30, '#c8bfa8', 400, 64, vMax, 1.5)}
-        ${svgPolyline(m.velR7,  '#1d4ed8', 400, 64, vMax, 1.5)}
+        ${svgPolyline(m.velR7,  '#1BBFA1', 400, 64, vMax, 1.5)}
       </svg>`;
 
     // ── Cupón impact ────────────────────────────────────────────────────────
