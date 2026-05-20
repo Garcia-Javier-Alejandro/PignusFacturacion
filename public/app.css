@@ -1,8 +1,39 @@
 /* Facturacion-specific overrides — loaded after pignus.css */
 
+.meta-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.meta-group__label {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  line-height: 1;
+}
+
+.meta-group__btns {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.meta-group__sep {
+  width: 1px;
+  height: 2rem;
+  background: var(--border);
+  align-self: center;
+  margin: 0 0.125rem;
+}
+
 .kpi-strip {
   grid-template-columns: 1.3fr 1fr 0.7fr 0.4fr;
 }
+
+.kpi-spark--month { height: 50px; }
 
 .pill--facturable {
   color: #1BBFA1;
