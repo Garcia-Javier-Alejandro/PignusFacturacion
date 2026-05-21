@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://ui.pignuslabs.com.ar/pignus.css?v=2">
+    <link rel="stylesheet" href="https://ui.pignuslabs.com.ar/pignus.css?v=3">
     <link rel="stylesheet" href="/app.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" defer></script>
@@ -53,7 +53,7 @@
           <div style="display:flex;flex:1;min-height:0">
             <div style="flex:1;display:flex;flex-direction:column;gap:.3rem">
               <div class="kpi-card__eyebrow">Ventas este mes</div>
-              <div class="kpi-card__value" id="kpi-sales-month">—</div>
+              <div class="kpi-card__value" id="kpi-sales-month" style="font-size:2.05rem">—</div>
               <div class="kpi-card__meta" style="margin-top:0">
                 <span class="kpi-delta" id="kpi-sales-delta"></span>
                 <span id="kpi-sales-delta-label"></span>
@@ -63,7 +63,7 @@
             <div style="width:1px;background:var(--border);margin:0 1.25rem;align-self:stretch"></div>
             <div style="flex:1;display:flex;flex-direction:column;gap:.3rem;min-width:0">
               <div class="kpi-card__eyebrow">Ingresos Netos este mes</div>
-              <div class="kpi-card__value" id="kpi-neto-month" style="font-size:clamp(.85rem,1.6vw,1.4rem)">—</div>
+              <div class="kpi-card__value" id="kpi-neto-month" style="font-size:2.05rem">—</div>
               <div class="kpi-card__meta" style="margin-top:0">
                 <span class="kpi-delta" id="kpi-neto-delta"></span>
                 <span id="kpi-neto-delta-label"></span>
@@ -107,7 +107,7 @@
               <option value="K">Cat. K</option>
             </select>
           </div>
-          <div class="kpi-card__value" id="kpi-remaining">—</div>
+          <div class="kpi-card__value" id="kpi-remaining" style="font-size:2.05rem">—</div>
           <div class="kpi-card__bars">
             <div class="kpi-bar-row">
               <div class="kpi-bar-row__header">
@@ -131,14 +131,13 @@
         </div>
 
         <!-- Card 4: Período -->
-        <div class="kpi-card">
+        <div class="kpi-card" style="gap:.4rem">
           <div class="kpi-card__eyebrow">Período</div>
           <div style="display:flex;align-items:center;gap:.4rem;flex-wrap:wrap">
             <input type="text" id="period-from" class="manual-input" placeholder="dd/mm/aaaa" maxlength="10" inputmode="numeric" style="width:7.5rem">
-            <span style="color:var(--ink-3)">—</span>
             <input type="text" id="period-to" class="manual-input" placeholder="dd/mm/aaaa" maxlength="10" inputmode="numeric" style="width:7.5rem">
           </div>
-          <div style="display:flex;gap:1.5rem;margin-top:auto">
+          <div style="display:flex;gap:1.5rem">
             <div class="kpi-inline">
               <span class="kpi-card__eyebrow">Ventas</span>
               <span class="kpi-card__value" id="kpi-sales-period">—</span>
@@ -394,11 +393,17 @@
 
         const baseline = `<line x1="0" y1="${chartH + 1}" x2="${W}" y2="${chartH + 1}" stroke="var(--border)" stroke-width="0.5"/>`;
 
-        const labelDays = [...new Set([1, 7, 14, 21, n])];
-        const axisLabels = labelDays.map((d) => {
+        const labelPoints = [
+          { d: 1, label: '0' },
+          { d: 7, label: 'W1' },
+          { d: 14, label: 'W2' },
+          { d: 21, label: 'W3' },
+          { d: n, label: 'W4' },
+        ].filter((p, i, arr) => arr.findIndex((q) => q.d === p.d) === i);
+        const axisLabels = labelPoints.map(({ d, label }) => {
           const x = xOf(d).toFixed(1);
           const anchor = d === 1 ? 'start' : d === n ? 'end' : 'middle';
-          return `<text x="${x}" y="${labelY}" text-anchor="${anchor}" font-size="8" fill="var(--ink-3)">${d}</text>`;
+          return `<text x="${x}" y="${labelY}" text-anchor="${anchor}" font-size="8" fill="var(--ink-3)">${label}</text>`;
         }).join('');
 
         svgEl.innerHTML = `
