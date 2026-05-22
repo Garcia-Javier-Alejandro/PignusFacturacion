@@ -391,9 +391,7 @@
           `${xOf(active).toFixed(1)},${chartH}`, `0,${chartH}`,
         ];
 
-        // Dividers at actual week-boundary days so they show as soon as the week completes
         const weekLines = [7, 14, 21]
-          .filter((d) => d <= active)
           .map((d) => `<line x1="${xOf(d).toFixed(1)}" y1="1" x2="${xOf(d).toFixed(1)}" y2="${chartH}" stroke="var(--border)" stroke-width="0.75"/>`)
           .join('');
 
