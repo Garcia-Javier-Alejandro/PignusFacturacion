@@ -54,7 +54,9 @@ export function transformOrderToRow(order) {
   const retencionIibb = toNumber(order._iibb);
   const impSirtac = toNumber(order._sirtac);
   const sumaImpuestos = retencionIibb + impSirtac;
-  const costoEnvio = sumPaymentsField(payments, 'shipping_cost') || toNumber(order.shipping?.cost);
+  const costoEnvio = order._sender_shipping_cost !== undefined
+    ? toNumber(order._sender_shipping_cost)
+    : (sumPaymentsField(payments, 'shipping_cost') || toNumber(order.shipping?.cost));
   const neto = pago - (recargoMp + retencionIibb + impSirtac + costoEnvio);
 
   return [

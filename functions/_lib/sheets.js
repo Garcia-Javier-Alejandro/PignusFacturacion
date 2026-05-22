@@ -121,6 +121,12 @@ export async function getExistingOrderIds(env) {
   );
 }
 
+export async function clearSheet(env) {
+  const sheetName = env.SHEET_NAME || DEFAULT_SHEET_NAME;
+  const range = encodeURIComponent(sheetName);
+  return sheetsFetch(env, `/values/${range}:clear`, { method: 'POST', body: JSON.stringify({}) });
+}
+
 export async function appendRows(env, rows) {
   if (rows.length === 0) {
     return { updates: { updatedRows: 0 } };

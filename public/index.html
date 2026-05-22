@@ -178,6 +178,7 @@
             <button id="contabilium-btn" type="button" class="btn btn--secondary">📄 Contabilium</button>
             <input type="file" id="contabilium-file" accept=".xlsx" hidden>
             <button id="export-btn" type="button" class="btn btn--secondary" disabled>↗ Añadir a Sheets</button>
+            <button id="full-export-btn" type="button" class="btn btn--secondary" disabled>↺ Re-exportar todo</button>
           </div>
         </div>
         <div class="meta-group__sep"></div>
@@ -356,6 +357,7 @@
       const clearCacheSt    = $('clear-cache-status');
       const table           = $('orders-table');
       const exportBtn       = $('export-btn');
+      const fullExportBtn   = $('full-export-btn');
       const statusEl        = $('status');
       const metaCount       = $('meta-count');
       const metaOldest      = $('meta-oldest');
@@ -1084,6 +1086,7 @@
         if (data.sheet_url) SHEET_URL = data.sheet_url;
         renderTable(data);
         exportBtn.disabled = false;
+        fullExportBtn.disabled = false;
         updateMeta(data.meta);
         updateKPIs();
         window.PIGNUS_DATA = {
@@ -1175,6 +1178,20 @@
           window.open(SHEET_URL, '_blank');
         } catch (err) { setStatus(err.message, 'err'); }
         finally { exportBtn.disabled = false; }
+      });
+
+      fullExportBtn.addEventListener('click', async () => {
+        if (!confirm('Esto borrará toda la hoja y re-exportará todo desde el caché. ¿Continuar?')) return;
+        fullExportBtn.disabled = true; setStatus('Limpiando hoja y re-exportando…');
+        try {
+          const res  = await fetch('/api/orders/full-export', { method: 'POST' });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || 'Error al re-exportar.');
+          if (data.sheet_url) SHEET_URL = data.sheet_url;
+          setStatus(`Re-exportación completa: ${data.exported_rows} filas.`, 'ok');
+          window.open(SHEET_URL, '_blank');
+        } catch (err) { setStatus(err.message, 'err'); }
+        finally { fullExportBtn.disabled = false; }
       });
       $('auth-btn').addEventListener('click', () => { window.location.href = '/api/meli/login'; });
 
