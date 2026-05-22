@@ -121,17 +121,46 @@ export async function getExistingOrderIds(env) {
   );
 }
 
-export async function clearSheet(env) {
+async function getSheetId(env) {
   const sheetName = env.SHEET_NAME || DEFAULT_SHEET_NAME;
-  const range = encodeURIComponent(sheetName);
-  return sheetsFetch(env, `/values/${range}:clear`, { method: 'POST', body: JSON.stringify({}) });
+  const meta = await sheetsFetch(env, '?fields=sheets.properties');
+  const sheet = (meta.sheets || []).find(
+    (s) => s.properties?.title === sheetName,
+  );
+  if (!sheet) throw new Error(`Sheet "${sheetName}" not found`);
+  return sheet.properties.sheetId;
+}
+
+export async function resetSheet(env, rowCount) {
+  const sheetId = await getSheetId(env);
+  const minRows = rowCount + 10;
+  await sheetsFetch(env, ':batchUpdate', {
+    method: 'POST',
+    body: JSON.stringify({
+      requests: [
+        // Delete all existing rows so no ghost rows remain
+        {
+          deleteDimension: {
+            range: { sheetId, dimension: 'ROWS', startIndex: 0, endIndex: 100000 },
+          },
+        },
+        // Re-create exactly as many rows as needed
+        {
+          appendDimension: {
+            sheetId,
+            dimension: 'ROWS',
+            length: minRows,
+          },
+        },
+      ],
+    }),
+  });
 }
 
 export async function overwriteRows(env, rows) {
   if (rows.length === 0) return { updatedRows: 0 };
   const sheetName = env.SHEET_NAME || DEFAULT_SHEET_NAME;
-  const endRow = rows.length;
-  const range = encodeURIComponent(`${sheetName}!A1:Q${endRow}`);
+  const range = encodeURIComponent(`${sheetName}!A1:Q${rows.length}`);
   return sheetsFetch(env, `/values/${range}?valueInputOption=USER_ENTERED`, {
     method: 'PUT',
     body: JSON.stringify({ values: rows }),
