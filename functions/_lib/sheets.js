@@ -127,6 +127,17 @@ export async function clearSheet(env) {
   return sheetsFetch(env, `/values/${range}:clear`, { method: 'POST', body: JSON.stringify({}) });
 }
 
+export async function overwriteRows(env, rows) {
+  if (rows.length === 0) return { updatedRows: 0 };
+  const sheetName = env.SHEET_NAME || DEFAULT_SHEET_NAME;
+  const endRow = rows.length;
+  const range = encodeURIComponent(`${sheetName}!A1:Q${endRow}`);
+  return sheetsFetch(env, `/values/${range}?valueInputOption=USER_ENTERED`, {
+    method: 'PUT',
+    body: JSON.stringify({ values: rows }),
+  });
+}
+
 export async function appendRows(env, rows) {
   if (rows.length === 0) {
     return { updates: { updatedRows: 0 } };

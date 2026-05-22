@@ -1,6 +1,6 @@
 import { errorResponse, json } from '../../_lib/http.js';
 import { getOrdersCache } from '../../_lib/ordersCache.js';
-import { clearSheet, appendRows } from '../../_lib/sheets.js';
+import { clearSheet, overwriteRows } from '../../_lib/sheets.js';
 import { OUTPUT_HEADERS, transformOrdersToRows } from '../../_lib/transform.js';
 
 export async function onRequestPost({ env }) {
@@ -21,13 +21,13 @@ export async function onRequestPost({ env }) {
     ];
     allRows.sort((a, b) => (a[1] > b[1] ? 1 : -1));
 
-    const toAppend = [OUTPUT_HEADERS, ...allRows];
-    const result = await appendRows(env, toAppend);
+    const toWrite = [OUTPUT_HEADERS, ...allRows];
+    const result = await overwriteRows(env, toWrite);
 
     return json({
       exported_rows: allRows.length,
       sheet_name: env.SHEET_NAME || 'Ventas',
-      google_updated_rows: result.updates?.updatedRows || toAppend.length,
+      google_updated_rows: result.updatedRows || toWrite.length,
     });
   } catch (error) {
     return errorResponse(500, error.message);
