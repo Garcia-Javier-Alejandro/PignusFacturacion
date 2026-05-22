@@ -613,6 +613,9 @@
       const saveHiddenIds   = (set)  => { editsState.hiddenIds   = [...set]; persistEdits(); };
       const saveMlOverrides = (obj)  => { editsState.mlOverrides = obj;  persistEdits(); };
 
+      // Backfill rows saved before Monto Facturable (index 11) was added
+      const normalizeStoredRow = (row) => row.length === 16 ? [...row.slice(0, 11), '', ...row.slice(11)] : row;
+
       // ── Table rendering ───────────────────────────────────────────────────
       let lastHeaders = [];
 
@@ -961,7 +964,7 @@
             fetch('/api/orders/cache').then((r) => r.json()),
             fetch('/api/edits').then((r) => r.json()),
           ]);
-          editsState.invoiceRows = editsData.invoiceRows || [];
+          editsState.invoiceRows = (editsData.invoiceRows || []).map(normalizeStoredRow);
           if (cacheData.rows?.length) applyData(cacheData);
           else renderTable({ headers: lastHeaders, rows: lastFetchedRows });
         } catch (e) {
@@ -1124,10 +1127,10 @@
             fetch('/api/orders/cache', {}).then((r) => r.json()),
             fetch('/api/edits',        {}).then((r) => r.json()),
           ]);
-          editsState.manualRows  = editsData.manualRows  || [];
+          editsState.manualRows  = (editsData.manualRows  || []).map(normalizeStoredRow);
           editsState.hiddenIds   = editsData.hiddenIds   || [];
-          editsState.mlOverrides = editsData.mlOverrides || {};
-          editsState.invoiceRows = editsData.invoiceRows || [];
+          editsState.mlOverrides = Object.fromEntries(Object.entries(editsData.mlOverrides || {}).map(([k, v]) => [k, normalizeStoredRow(v)]));
+          editsState.invoiceRows = (editsData.invoiceRows || []).map(normalizeStoredRow);
           if (cacheData.rows?.length) { applyData(cacheData); await enrichExtra(); }
           setLastSync(cacheData.meta?.updated_at);
         } catch {}
@@ -1313,7 +1316,7 @@
             // Row shape must match OUTPUT_HEADERS order exactly
             invoiceRows.push([
               numero, fecha, razonSocial,
-              totalFact, 0, 0, 0, 0, 0, 0, totalFact,
+              totalFact, 0, 0, 0, 0, 0, 0, totalFact, totalFact,
               ciudad, provincia, origen, fecha, numero,
             ]);
           }
@@ -1409,10 +1412,10 @@
             fetch('/api/orders/cache').then((r) => r.json()),
             fetch('/api/edits').then((r) => r.json()),
           ]);
-          editsState.manualRows  = editsData.manualRows  || [];
+          editsState.manualRows  = (editsData.manualRows  || []).map(normalizeStoredRow);
           editsState.hiddenIds   = editsData.hiddenIds   || [];
-          editsState.mlOverrides = editsData.mlOverrides || {};
-          editsState.invoiceRows = editsData.invoiceRows || [];
+          editsState.mlOverrides = Object.fromEntries(Object.entries(editsData.mlOverrides || {}).map(([k, v]) => [k, normalizeStoredRow(v)]));
+          editsState.invoiceRows = (editsData.invoiceRows || []).map(normalizeStoredRow);
           if (cacheData.rows?.length) applyData(cacheData);
 
           const parts = [];
