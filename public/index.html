@@ -391,11 +391,10 @@
           `${xOf(active).toFixed(1)},${chartH}`, `0,${chartH}`,
         ];
 
-        // Fixed quarter positions for even visual segments regardless of days-in-month
-        const quarters = [W * 0.25, W * 0.5, W * 0.75];
-        const weekLines = quarters
-          .filter((qx) => qx <= xOf(active) + 0.5)
-          .map((qx) => `<line x1="${qx.toFixed(1)}" y1="1" x2="${qx.toFixed(1)}" y2="${chartH}" stroke="var(--border)" stroke-width="0.75"/>`)
+        // Dividers at actual week-boundary days so they show as soon as the week completes
+        const weekLines = [7, 14, 21]
+          .filter((d) => d <= active)
+          .map((d) => `<line x1="${xOf(d).toFixed(1)}" y1="1" x2="${xOf(d).toFixed(1)}" y2="${chartH}" stroke="var(--border)" stroke-width="0.75"/>`)
           .join('');
 
         const baseline = `<line x1="0" y1="${chartH + 1}" x2="${W}" y2="${chartH + 1}" stroke="var(--border)" stroke-width="0.5"/>`;
