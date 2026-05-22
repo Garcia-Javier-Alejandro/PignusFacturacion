@@ -257,7 +257,7 @@
       <details class="debug-section">
         <summary>Aux Debug Tools</summary>
         <div class="debug-body">
-          <button id="import-btn" type="button" class="btn btn--secondary">Importar historial 2026</button>
+          <button id="import-btn" type="button" class="btn btn--secondary">Importar historial (12 meses)</button>
           <button id="enrich-shipping-btn" type="button" class="btn btn--secondary">Re-enriquecer costos envío</button>
           <button id="full-export-btn" type="button" class="btn btn--secondary">↺ Re-exportar todo</button>
           <button id="clear-cache-btn" type="button" class="btn btn--danger">✕ Limpiar caché</button>
@@ -277,7 +277,7 @@
 
     <script>
       let SHEET_URL = null;
-      const HISTORY_CUTOFF = new Date('2026-01-01T00:00:00');
+      const HISTORY_CUTOFF = new Date(new Date().getFullYear(), new Date().getMonth() - 11, 1);
       const MONEY_COLS   = new Set(['Pago', 'Recargo MP', 'Retencion IIBB', 'Imp SIRTAC', 'Suma Impuestos', 'Costo Envio', 'Neto', 'Cupón']);
       const READONLY_COLS = new Set(['Suma Impuestos', 'Neto']);
       const DATE_COLS    = new Set(['Fecha Compra', 'Fecha Factura']);
@@ -446,9 +446,10 @@
         let pendingCount = 0, pendingAmount = 0, pendingMonthCount = 0;
         const pendingForLimit = [];
 
-        const prevMonth     = CURRENT_MONTH === 0 ? 11 : CURRENT_MONTH - 1;
-        const prevMonthYear = CURRENT_MONTH === 0 ? CURRENT_YEAR - 1 : CURRENT_YEAR;
-        const TODAY_DAY     = NOW.getDate(); // cap prev-month window to same day of month
+        const prevMonth      = CURRENT_MONTH === 0 ? 11 : CURRENT_MONTH - 1;
+        const prevMonthYear  = CURRENT_MONTH === 0 ? CURRENT_YEAR - 1 : CURRENT_YEAR;
+        const TODAY_DAY      = NOW.getDate(); // cap prev-month window to same day of month
+        const trailing12Start = new Date(CURRENT_YEAR, CURRENT_MONTH - 11, 1); // rolling 12-month window for Monotributo
 
         for (const row of allRows) {
           const compraDate = parseDate(row[fechaIdx]);
@@ -477,9 +478,9 @@
             const factDateStr = fechaFactIdx !== -1 ? row[fechaFactIdx] : '';
             const factDate = factDateStr ? parseDate(factDateStr) : compraDate;
             const fd = isNaN(factDate) ? compraDate : factDate;
-            if (fd.getFullYear() === CURRENT_YEAR) {
+            if (fd >= trailing12Start && fd <= NOW) {
               factYear += neto + costo;
-              if (fd.getMonth() === CURRENT_MONTH) factMonth += neto + costo;
+              if (fd.getFullYear() === CURRENT_YEAR && fd.getMonth() === CURRENT_MONTH) factMonth += neto + costo;
             }
           }
 
@@ -946,7 +947,7 @@
           editsState = { manualRows: [], hiddenIds: [], mlOverrides: {}, invoiceRows: [] };
           lastFetchedRows = []; lastHeaders = [];
           table.innerHTML = '';
-          importBtn.textContent = 'Importar historial 2026'; importBtn.disabled = false;
+          importBtn.textContent = 'Importar historial (12 meses)'; importBtn.disabled = false;
           updateMeta({ loaded: 0, oldest_date: null });
           clearCacheSt.textContent = '✓ Caché limpiada';
         } catch (e) {
@@ -1171,7 +1172,7 @@
 
       const stopImport = () => {
         importRunning = false;
-        importBtn.textContent = 'Importar historial 2026';
+        importBtn.textContent = 'Importar historial (12 meses)';
       };
 
       importBtn.addEventListener('click', async () => {
@@ -1190,7 +1191,7 @@
             await new Promise((r) => setTimeout(r, 2000));
           } catch (err) { setStatus(err.message, 'err'); importRunning = false; break; }
         }
-        importBtn.textContent = 'Importar historial 2026';
+        importBtn.textContent = 'Importar historial (12 meses)';
         if (importCompletedNaturally) {
           setStatus('Enriqueciendo datos adicionales…');
           await enrichExtra();

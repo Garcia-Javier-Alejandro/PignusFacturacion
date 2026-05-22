@@ -1,4 +1,5 @@
-export const HISTORY_CUTOFF = '2026-01-01T00:00:00';
+const _t = new Date();
+export const HISTORY_CUTOFF = new Date(_t.getFullYear(), _t.getMonth() - 11, 1).toISOString().slice(0, 19);
 const CACHE_KEY = 'orders_cache';
 
 export async function getOrdersCache(env) {
