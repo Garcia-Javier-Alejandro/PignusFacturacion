@@ -40,3 +40,9 @@
   background: rgba(29, 78, 216, .07);
   border-color: rgba(29, 78, 216, .22);
 }
+
+.pill--obsoleto {
+  color: var(--ink-3);
+  background: transparent;
+  border-color: var(--border);
+}

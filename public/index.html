@@ -283,10 +283,11 @@
         I: 78_479_211.62, J: 89_872_640.30, K: 108_357_084.05,
       };
 
-      const NOW           = new Date();
-      const CURRENT_MONTH = NOW.getMonth();
-      const CURRENT_YEAR  = NOW.getFullYear();
-      const DAYS_IN_MONTH = new Date(CURRENT_YEAR, CURRENT_MONTH + 1, 0).getDate();
+      const NOW             = new Date();
+      const CURRENT_MONTH   = NOW.getMonth();
+      const CURRENT_YEAR    = NOW.getFullYear();
+      const DAYS_IN_MONTH   = new Date(CURRENT_YEAR, CURRENT_MONTH + 1, 0).getDate();
+      const OBSOLETE_CUTOFF = new Date(NOW.getFullYear(), NOW.getMonth() - 13, NOW.getDate());
 
       let isExpanded = false;
       let sortCol    = null;
@@ -480,8 +481,8 @@
             }
           }
 
-          // Pending
-          if (!numFact && yr > 2024) {
+          // Pending — exclude Obsoleto (older than 13 months)
+          if (!numFact && compraDate >= OBSOLETE_CUTOFF) {
             pendingCount++;
             pendingAmount += montoFact;
             if (yr === CURRENT_YEAR && mo === CURRENT_MONTH) pendingMonthCount++;
@@ -620,10 +621,16 @@
       let lastHeaders = [];
 
       const getEstado = (row) => {
-        const idx = lastHeaders.indexOf('Nº Factura');
-        if (idx === -1) return null;
-        const v = row[idx];
-        return (!v || v === '') ? 'Pendiente' : 'Facturado';
+        const numFactIdx = lastHeaders.indexOf('Nº Factura');
+        if (numFactIdx === -1) return null;
+        const numFact = row[numFactIdx];
+        if (numFact && numFact !== '') return 'Facturado';
+        const fechaCompraIdx = lastHeaders.indexOf('Fecha Compra');
+        if (fechaCompraIdx !== -1) {
+          const d = parseDate(row[fechaCompraIdx]);
+          if (!isNaN(d) && d < OBSOLETE_CUTOFF) return 'Obsoleto';
+        }
+        return 'Pendiente';
       };
 
       const renderTable = ({ headers, rows }) => {
@@ -669,7 +676,11 @@
               if (estado) {
                 const pill = document.createElement('span');
                 const isFacturable = estado === 'Pendiente' && invoiceableIds.has(rowId);
-                pill.className = `pill ${isFacturable ? 'pill--facturable' : estado === 'Pendiente' ? 'pill--pending' : 'pill--ok'}`;
+                const pillClass = isFacturable ? 'pill--facturable'
+                  : estado === 'Pendiente' ? 'pill--pending'
+                  : estado === 'Obsoleto'  ? 'pill--obsoleto'
+                  : 'pill--ok';
+                pill.className = `pill ${pillClass}`;
                 const dot = document.createElement('span');
                 dot.className = 'pill__dot';
                 pill.append(dot, isFacturable ? 'Facturable' : estado);
@@ -793,7 +804,7 @@
               const nf = _nfIdx !== -1 ? (r[_nfIdx] ?? '') : '';
               if (nf) continue;
               const d = parseDate(r[_fIdx]);
-              if (isNaN(d)) continue;
+              if (isNaN(d) || d < OBSOLETE_CUTOFF) continue;
               const n = _nIdx !== -1 ? Number(r[_nIdx] || 0) : 0;
               const c = _cIdx !== -1 ? Number(r[_cIdx] || 0) : 0;
               _pending.push({ date: d, amount: n + c, rowId: rid });
