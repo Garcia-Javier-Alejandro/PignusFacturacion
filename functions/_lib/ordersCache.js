@@ -3,7 +3,7 @@ export const HISTORY_CUTOFF = new Date(_t.getFullYear(), _t.getMonth() - 11, 1).
 const CACHE_KEY = 'orders_cache';
 
 export async function getOrdersCache(env) {
-  return await env.PIGNUS_TOKENS.get(CACHE_KEY, 'json') || {
+  const cache = await env.PIGNUS_TOKENS.get(CACHE_KEY, 'json') || {
     orders: [],
     seen_ids: [],
     probe_total: 0,
@@ -12,6 +12,10 @@ export async function getOrdersCache(env) {
     newest_date: null,
     updated_at: null,
   };
+  if (!cache.newest_date && cache.orders && cache.orders.length > 0) {
+    cache.newest_date = cache.orders[0].date_created;
+  }
+  return cache;
 }
 
 export async function saveOrdersCache(env, cache) {

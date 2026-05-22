@@ -54,6 +54,7 @@ export async function onRequestGet({ env }) {
       loaded: cache.orders.length,
       total: cache.probe_total,
       oldest_date: cache.oldest_date,
+      newest_date: cache.newest_date,
       next_older_offset: cache.next_older_offset,
       done: isCacheDone(cache),
     },

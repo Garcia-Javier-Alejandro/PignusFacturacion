@@ -1195,7 +1195,7 @@
           await enrichExtra();
           setStatus('Enriqueciendo costos de envío…');
           await enrichShippingCosts();
-          setStatus('Historia importada hasta 01/01/2026.', 'ok');
+          setStatus(`Historia importada desde ${formatDate(HISTORY_CUTOFF)}.`, 'ok');
         }
       });
 
