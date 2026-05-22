@@ -75,7 +75,11 @@
 
         <!-- Card 2: Facturado -->
         <div class="kpi-card">
-          <div class="kpi-card__eyebrow">Facturado este mes</div>
+          <div style="display:flex;align-items:center;gap:.35rem">
+            <div class="kpi-card__eyebrow">Facturado este mes</div>
+            <button id="monto-fact-info-btn" type="button" style="background:none;border:none;cursor:pointer;padding:0;color:var(--ink-3);font-size:.75rem;line-height:1;flex-shrink:0">ⓘ</button>
+          </div>
+          <div id="monto-fact-info" style="display:none;font-size:.7rem;color:var(--ink-3);line-height:1.4;margin-bottom:.2rem">Precio del producto más lo que pagó el comprador por el envío. No incluye la comisión de Mercado Libre ni los impuestos retenidos (IIBB/SIRTAC).</div>
           <div class="kpi-card__value kpi-card__value--lg" id="kpi-billed-month">—</div>
           <div id="kpi-pending-block" style="display:none;margin-top:auto;background:var(--pending-bg);border:1px solid var(--pending-bdr);border-radius:99px;padding:.85rem 1.25rem;text-align:center">
             <div class="kpi-card__eyebrow" style="color:var(--pending-fg);margin-bottom:.35rem">Pendiente de facturar</div>
@@ -410,13 +414,14 @@
       // ── KPI calculations ─────────────────────────────────────────────────
 
       const updateKPIs = () => {
-        const pagoIdx     = lastHeaders.indexOf('Pago');
-        const fechaIdx    = lastHeaders.indexOf('Fecha Compra');
-        const fechaFactIdx = lastHeaders.indexOf('Fecha Factura');
-        const netoIdx     = lastHeaders.indexOf('Neto');
-        const costoIdx    = lastHeaders.indexOf('Costo Envio');
-        const origenIdx   = lastHeaders.indexOf('Orígen');
-        const numFactIdx  = lastHeaders.indexOf('Nº Factura');
+        const pagoIdx        = lastHeaders.indexOf('Pago');
+        const fechaIdx       = lastHeaders.indexOf('Fecha Compra');
+        const fechaFactIdx   = lastHeaders.indexOf('Fecha Factura');
+        const netoIdx        = lastHeaders.indexOf('Neto');
+        const costoIdx       = lastHeaders.indexOf('Costo Envio');
+        const montoFactIdx   = lastHeaders.indexOf('Monto Facturable');
+        const origenIdx      = lastHeaders.indexOf('Orígen');
+        const numFactIdx     = lastHeaders.indexOf('Nº Factura');
         if (pagoIdx === -1 || fechaIdx === -1) return;
 
         const allRows = [...lastFetchedRows, ...getManualRows(), ...getInvoiceRows()];
@@ -446,6 +451,7 @@
           const pago   = Number(row[pagoIdx]  || 0);
           const neto   = netoIdx  !== -1 ? Number(row[netoIdx]  || 0) : 0;
           const costo  = costoIdx !== -1 ? Number(row[costoIdx] || 0) : 0;
+          const montoFact = (montoFactIdx !== -1 && Number(row[montoFactIdx])) ? Number(row[montoFactIdx]) : (neto + costo);
           const origen = origenIdx !== -1 ? (row[origenIdx] ?? '') : '';
           const numFact = numFactIdx !== -1 ? (row[numFactIdx] ?? '') : '';
           const yr = compraDate.getFullYear(), mo = compraDate.getMonth();
@@ -468,18 +474,18 @@
             const factDate = factDateStr ? parseDate(factDateStr) : compraDate;
             const fd = isNaN(factDate) ? compraDate : factDate;
             if (fd >= trailing12Start && fd <= NOW) {
-              factYear += neto + costo;
-              if (fd.getFullYear() === CURRENT_YEAR && fd.getMonth() === CURRENT_MONTH) factMonth += neto + costo;
-              if (fd >= trailing30Start) fact30Days += neto + costo;
+              factYear += montoFact;
+              if (fd.getFullYear() === CURRENT_YEAR && fd.getMonth() === CURRENT_MONTH) factMonth += montoFact;
+              if (fd >= trailing30Start) fact30Days += montoFact;
             }
           }
 
           // Pending
           if (!numFact && yr > 2024) {
             pendingCount++;
-            pendingAmount += neto + costo;
+            pendingAmount += montoFact;
             if (yr === CURRENT_YEAR && mo === CURRENT_MONTH) pendingMonthCount++;
-            pendingForLimit.push({ date: compraDate, amount: neto + costo });
+            pendingForLimit.push({ date: compraDate, amount: montoFact });
           }
         }
 
@@ -563,9 +569,10 @@
             sp++;
             const numFact = numFactIdx !== -1 ? (row[numFactIdx] ?? '') : '';
             if (numFact) {
-              const neto  = netoIdx  !== -1 ? Number(row[netoIdx]  || 0) : 0;
-              const costo = costoIdx !== -1 ? Number(row[costoIdx] || 0) : 0;
-              bp += neto + costo;
+              const _neto  = netoIdx      !== -1 ? Number(row[netoIdx]      || 0) : 0;
+              const _costo = costoIdx     !== -1 ? Number(row[costoIdx]     || 0) : 0;
+              const _mf    = (montoFactIdx !== -1 && Number(row[montoFactIdx])) ? Number(row[montoFactIdx]) : (_neto + _costo);
+              bp += _mf;
             }
           }
           $('kpi-sales-period').textContent  = sp;
@@ -1217,6 +1224,11 @@
         if (v.length > 5) v = v.slice(0, 5) + '/' + v.slice(5, 9);
         e.target.value = v;
       };
+      $('monto-fact-info-btn').addEventListener('click', () => {
+        const el = $('monto-fact-info');
+        el.style.display = el.style.display === 'none' ? '' : 'none';
+      });
+
       $('period-from').addEventListener('input', autoFmtDate);
       $('period-to').addEventListener('input', autoFmtDate);
       $('period-from').addEventListener('change', updateKPIs);
