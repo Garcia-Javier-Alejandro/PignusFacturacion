@@ -454,7 +454,9 @@
           const costo  = costoIdx !== -1 ? Number(row[costoIdx] || 0) : 0;
           const montoFact = (montoFactIdx !== -1 && Number(row[montoFactIdx])) ? Number(row[montoFactIdx]) : (neto + costo);
           const origen = origenIdx !== -1 ? (row[origenIdx] ?? '') : '';
-          const numFact = numFactIdx !== -1 ? (row[numFactIdx] ?? '') : '';
+          const numFact   = numFactIdx  !== -1 ? (row[numFactIdx]  ?? '') : '';
+          const fechaFact = fechaFactIdx !== -1 ? (row[fechaFactIdx] ?? '') : '';
+          const isInvoiced = !!(numFact || fechaFact);
           const yr = compraDate.getFullYear(), mo = compraDate.getMonth();
 
           // Card 1: sales count + sparkline — all origins
@@ -470,8 +472,8 @@
           if (yr === prevMonthYear && mo === prevMonth && compraDate.getDate() <= TODAY_DAY) netoPrevMonth += neto;
 
           // Card 2 & 3: invoiced rows, dated by Fecha Factura
-          if (numFact) {
-            const factDateStr = fechaFactIdx !== -1 ? row[fechaFactIdx] : '';
+          if (isInvoiced) {
+            const factDateStr = fechaFact || '';
             const factDate = factDateStr ? parseDate(factDateStr) : compraDate;
             const fd = isNaN(factDate) ? compraDate : factDate;
             if (fd >= trailing12Start && fd <= NOW) {
@@ -482,7 +484,7 @@
           }
 
           // Pending — exclude Obsoleto (older than 13 months)
-          if (!numFact && compraDate >= OBSOLETE_CUTOFF) {
+          if (!isInvoiced && compraDate >= OBSOLETE_CUTOFF) {
             pendingCount++;
             pendingAmount += montoFact;
             if (yr === CURRENT_YEAR && mo === CURRENT_MONTH) pendingMonthCount++;
@@ -568,8 +570,9 @@
             const d = parseDate(row[fechaIdx]);
             if (isNaN(d) || d < from || d > to) continue;
             sp++;
-            const numFact = numFactIdx !== -1 ? (row[numFactIdx] ?? '') : '';
-            if (numFact) {
+            const _nf = numFactIdx  !== -1 ? (row[numFactIdx]  ?? '') : '';
+            const _ff = fechaFactIdx !== -1 ? (row[fechaFactIdx] ?? '') : '';
+            if (_nf || _ff) {
               const _neto  = netoIdx      !== -1 ? Number(row[netoIdx]      || 0) : 0;
               const _costo = costoIdx     !== -1 ? Number(row[costoIdx]     || 0) : 0;
               const _mf    = (montoFactIdx !== -1 && Number(row[montoFactIdx])) ? Number(row[montoFactIdx]) : (_neto + _costo);
@@ -621,10 +624,12 @@
       let lastHeaders = [];
 
       const getEstado = (row) => {
-        const numFactIdx = lastHeaders.indexOf('Nº Factura');
+        const numFactIdx   = lastHeaders.indexOf('Nº Factura');
+        const fechaFactIdx = lastHeaders.indexOf('Fecha Factura');
         if (numFactIdx === -1) return null;
-        const numFact = row[numFactIdx];
-        if (numFact && numFact !== '') return 'Facturado';
+        const numFact   = row[numFactIdx];
+        const fechaFact = fechaFactIdx !== -1 ? row[fechaFactIdx] : '';
+        if ((numFact && numFact !== '') || (fechaFact && fechaFact !== '')) return 'Facturado';
         const fechaCompraIdx = lastHeaders.indexOf('Fecha Compra');
         if (fechaCompraIdx !== -1) {
           const d = parseDate(row[fechaCompraIdx]);
@@ -788,7 +793,8 @@
             let _factMonth = 0;
             for (const r of [...rows, ...getManualRows(), ...getInvoiceRows()]) {
               const nf = _nfIdx !== -1 ? (r[_nfIdx] ?? '') : '';
-              if (!nf) continue;
+              const ff = _ffIdx !== -1 ? (r[_ffIdx] ?? '') : '';
+              if (!nf && !ff) continue;
               const d = parseDate(r[_fIdx]);
               if (isNaN(d)) continue;
               const n = _nIdx !== -1 ? Number(r[_nIdx] || 0) : 0;
@@ -802,7 +808,8 @@
             const _pending = [];
             for (const { row: r, rowId: rid } of allDisplayRows) {
               const nf = _nfIdx !== -1 ? (r[_nfIdx] ?? '') : '';
-              if (nf) continue;
+              const ff = _ffIdx !== -1 ? (r[_ffIdx] ?? '') : '';
+              if (nf || ff) continue;
               const d = parseDate(r[_fIdx]);
               if (isNaN(d) || d < OBSOLETE_CUTOFF) continue;
               const n = _nIdx !== -1 ? Number(r[_nIdx] || 0) : 0;
