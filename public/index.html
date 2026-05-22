@@ -108,24 +108,14 @@
               <option value="K">Cat. K</option>
             </select>
           </div>
-          <div class="kpi-card__bars" style="margin-top:auto">
-            <div class="kpi-bar-row">
-              <div class="kpi-bar-row__header">
-                <span class="kpi-bar-row__label" id="bar-year-label" style="font-size:calc(var(--text-xs)*1.5)">ANUAL</span>
-                <span class="kpi-bar-row__amount" id="bar-year-limit" style="font-size:calc(var(--text-sm)*1.5)"></span>
-              </div>
-              <div class="kpi-bar-row__track">
-                <div class="kpi-bar-row__fill" id="bar-year-fill" style="width:0%"></div>
-              </div>
+          <div style="display:flex;flex-direction:column;gap:.75rem;margin-top:auto">
+            <div>
+              <div class="kpi-card__eyebrow" style="margin-bottom:.2rem">Anual facturado</div>
+              <span id="tax-year-billed" style="font-size:1.1rem;font-weight:600">—</span><span id="tax-year-limit" style="color:var(--ink-3);font-size:var(--text-sm)"></span>
             </div>
-            <div class="kpi-bar-row">
-              <div class="kpi-bar-row__header">
-                <span class="kpi-bar-row__label" id="bar-month-label" style="font-size:calc(var(--text-xs)*1.5)">MENSUAL</span>
-                <span class="kpi-bar-row__amount" id="bar-month-limit" style="font-size:calc(var(--text-sm)*1.5)"></span>
-              </div>
-              <div class="kpi-bar-row__track">
-                <div class="kpi-bar-row__fill" id="bar-month-fill" style="width:0%"></div>
-              </div>
+            <div>
+              <div class="kpi-card__eyebrow" style="margin-bottom:.2rem">Mensual facturado</div>
+              <span id="tax-month-billed" style="font-size:1.1rem;font-weight:600">—</span><span id="tax-month-limit" style="color:var(--ink-3);font-size:var(--text-sm)"></span>
             </div>
           </div>
         </div>
@@ -546,18 +536,10 @@
           invLine.style.display = 'none';
         }
 
-        const yearPct  = Math.min(100, (factYear  / catMax)     * 100);
-        const monthPct = Math.min(100, (factMonth / monthlyMax) * 100);
-
-        $('bar-year-label').textContent  = `ANUAL — ${yearPct.toFixed(1)}%`;
-        $('bar-year-limit').textContent  = ars.format(catMax);
-        $('bar-month-label').textContent = `MENSUAL — ${monthPct.toFixed(1)}%`;
-        $('bar-month-limit').textContent = ars.format(monthlyMax);
-
-        const yearFill  = $('bar-year-fill');
-        const monthFill = $('bar-month-fill');
-        yearFill.style.width  = `${yearPct}%`;
-        monthFill.style.width = `${monthPct}%`;
+        $('tax-year-billed').textContent  = ars.format(factYear);
+        $('tax-year-limit').textContent   = ` / ${ars.format(catMax)}`;
+        $('tax-month-billed').textContent = ars.format(factMonth);
+        $('tax-month-limit').textContent  = ` / ${ars.format(monthlyMax)}`;
         yearFill.className  = `kpi-bar-row__fill${yearPct  >= 90 ? ' kpi-bar-row__fill--err' : yearPct  >= 70 ? ' kpi-bar-row__fill--warn' : ''}`;
         monthFill.className = `kpi-bar-row__fill${monthPct >= 90 ? ' kpi-bar-row__fill--err' : monthPct >= 70 ? ' kpi-bar-row__fill--warn' : ''}`;
 
