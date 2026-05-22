@@ -123,22 +123,13 @@ export async function enrichOrders(orders, env) {
     const fullOrder = orderRes.ok ? await orderRes.json() : order;
     const shippingId = fullOrder.shipping?.id ?? order.shipping?.id;
     if (shippingId) {
-      const [shipRes, costsRes] = await Promise.all([
-        fetch(`https://api.mercadolibre.com/shipments/${shippingId}`, {
-          headers: {
-            accept: 'application/json',
-            authorization: `Bearer ${tokens.access_token}`,
-            'x-format-new': 'true',
-          },
-        }),
-        fetch(`https://api.mercadolibre.com/shipments/${shippingId}/costs`, {
-          headers: {
-            accept: 'application/json',
-            authorization: `Bearer ${tokens.access_token}`,
-            'x-format-new': 'true',
-          },
-        }),
-      ]);
+      const shipRes = await fetch(`https://api.mercadolibre.com/shipments/${shippingId}`, {
+        headers: {
+          accept: 'application/json',
+          authorization: `Bearer ${tokens.access_token}`,
+          'x-format-new': 'true',
+        },
+      });
       if (shipRes.ok) {
         const shipData = await shipRes.json();
         const city = shipData.receiver_address?.city
@@ -155,11 +146,6 @@ export async function enrichOrders(orders, env) {
                ?? shipData.destination?.receiver_address?.state
                ?? null,
         };
-      }
-      if (costsRes.ok) {
-        const costsData = await costsRes.json();
-        fullOrder._sender_shipping_cost = (costsData.senders || [])
-          .reduce((sum, s) => sum + Number(s.cost || 0), 0);
       }
     }
     enriched.push(fullOrder);

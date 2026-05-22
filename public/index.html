@@ -1088,12 +1088,24 @@
 
       let lastFetchedRows = [];
 
-      // ── Enrichment pass ───────────────────────────────────────────────────
+      // ── Enrichment passes ─────────────────────────────────────────────────
       const enrichExtra = async () => {
         let done = false;
         while (!done) {
           try {
             const res = await fetch('/api/orders/enrich-extra', {});
+            if (!res.ok) break;
+            const data = await res.json();
+            applyData(data); done = data.enrichDone;
+          } catch { break; }
+        }
+      };
+
+      const enrichShippingCosts = async () => {
+        let done = false;
+        while (!done) {
+          try {
+            const res = await fetch('/api/orders/enrich-shipping-costs');
             if (!res.ok) break;
             const data = await res.json();
             applyData(data); done = data.enrichDone;
@@ -1153,6 +1165,7 @@
           const total = nHoy + nAyer;
           setStatus(`${label} pedido${total !== 1 ? 's' : ''} cargados.`, 'ok');
           await enrichExtra();
+          await enrichShippingCosts();
         } catch (err) { setStatus(err.message, 'err'); }
         finally { todayBtn.disabled = false; }
       });
@@ -1184,6 +1197,8 @@
         if (importCompletedNaturally) {
           setStatus('Enriqueciendo datos adicionales…');
           await enrichExtra();
+          setStatus('Enriqueciendo costos de envío…');
+          await enrichShippingCosts();
           setStatus('Historia importada hasta 01/01/2026.', 'ok');
         }
       });
