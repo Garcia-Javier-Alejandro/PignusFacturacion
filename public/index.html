@@ -54,8 +54,8 @@
             <div style="flex:1;display:flex;flex-direction:column;gap:.3rem">
               <div class="kpi-card__eyebrow">Ventas este mes</div>
               <div class="kpi-card__value" id="kpi-sales-month" style="font-size:2.05rem">—</div>
-              <div class="kpi-card__meta" style="margin-top:0">
-                <span class="kpi-delta" id="kpi-sales-delta"></span>
+              <div class="kpi-card__meta" style="margin-top:0;flex-direction:column;align-items:flex-start;font-size:calc(1.05rem * 0.7)">
+                <span class="kpi-delta" id="kpi-sales-delta" style="font-size:calc(var(--text-xs) * 0.7)"></span>
                 <span id="kpi-sales-delta-label"></span>
               </div>
               <svg class="kpi-spark kpi-spark--month" id="spark-sales" viewBox="0 0 200 50" preserveAspectRatio="none" style="margin-top:auto"></svg>
@@ -64,8 +64,8 @@
             <div style="flex:1;display:flex;flex-direction:column;gap:.3rem;min-width:0">
               <div class="kpi-card__eyebrow">Ingresos Netos este mes</div>
               <div class="kpi-card__value" id="kpi-neto-month" style="font-size:2.05rem">—</div>
-              <div class="kpi-card__meta" style="margin-top:0">
-                <span class="kpi-delta" id="kpi-neto-delta"></span>
+              <div class="kpi-card__meta" style="margin-top:0;flex-direction:column;align-items:flex-start;font-size:calc(1.05rem * 0.7)">
+                <span class="kpi-delta" id="kpi-neto-delta" style="font-size:calc(var(--text-xs) * 0.7)"></span>
                 <span id="kpi-neto-delta-label"></span>
               </div>
               <svg class="kpi-spark kpi-spark--month" id="spark-neto" viewBox="0 0 200 50" preserveAspectRatio="none" style="margin-top:auto"></svg>
@@ -92,7 +92,7 @@
 
         <!-- Card 3: Restante en categoría -->
         <div class="kpi-card">
-          <div style="display:flex;align-items:center;justify-content:space-between">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding-bottom:12px">
             <div class="kpi-card__eyebrow">Restante en categoría</div>
             <select id="tax-category" class="kpi-card__cat-select">
               <option value="A">Cat. A</option>
