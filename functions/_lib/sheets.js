@@ -121,39 +121,41 @@ export async function getExistingOrderIds(env) {
   );
 }
 
-async function getSheetId(env) {
+async function getSheetMeta(env) {
   const sheetName = env.SHEET_NAME || DEFAULT_SHEET_NAME;
   const meta = await sheetsFetch(env, '?fields=sheets.properties');
-  const sheet = (meta.sheets || []).find(
-    (s) => s.properties?.title === sheetName,
-  );
+  const sheet = (meta.sheets || []).find((s) => s.properties?.title === sheetName);
   if (!sheet) throw new Error(`Sheet "${sheetName}" not found`);
-  return sheet.properties.sheetId;
+  return {
+    sheetId: sheet.properties.sheetId,
+    rowCount: sheet.properties.gridProperties?.rowCount ?? 1000,
+  };
 }
 
 export async function resetSheet(env, rowCount) {
-  const sheetId = await getSheetId(env);
-  const minRows = rowCount + 10;
+  const { sheetId, rowCount: currentRows } = await getSheetMeta(env);
+  const requests = [];
+
+  // Sheets requires at least 1 row — delete everything except the last row
+  if (currentRows > 1) {
+    requests.push({
+      deleteDimension: {
+        range: { sheetId, dimension: 'ROWS', startIndex: 0, endIndex: currentRows - 1 },
+      },
+    });
+  }
+
+  // Append enough rows for the new data (we already have 1 row remaining)
+  const toAdd = rowCount + 10 - 1;
+  if (toAdd > 0) {
+    requests.push({
+      appendDimension: { sheetId, dimension: 'ROWS', length: toAdd },
+    });
+  }
+
   await sheetsFetch(env, ':batchUpdate', {
     method: 'POST',
-    body: JSON.stringify({
-      requests: [
-        // Delete all existing rows so no ghost rows remain
-        {
-          deleteDimension: {
-            range: { sheetId, dimension: 'ROWS', startIndex: 0, endIndex: 100000 },
-          },
-        },
-        // Re-create exactly as many rows as needed
-        {
-          appendDimension: {
-            sheetId,
-            dimension: 'ROWS',
-            length: minRows,
-          },
-        },
-      ],
-    }),
+    body: JSON.stringify({ requests }),
   });
 }
 
