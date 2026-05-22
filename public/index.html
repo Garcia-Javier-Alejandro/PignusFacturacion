@@ -103,6 +103,7 @@
               <option value="F">Cat. F</option>
               <option value="G">Cat. G</option>
               <option value="H" selected>Cat. H</option>
+              <option value="I">Cat. I</option>
               <option value="J">Cat. J</option>
               <option value="K">Cat. K</option>
             </select>
@@ -137,7 +138,7 @@
             <input type="text" id="period-from" class="manual-input" placeholder="dd/mm/aaaa" maxlength="10" inputmode="numeric" style="width:7.5rem">
             <input type="text" id="period-to" class="manual-input" placeholder="dd/mm/aaaa" maxlength="10" inputmode="numeric" style="width:7.5rem">
           </div>
-          <div style="display:flex;gap:1.5rem">
+          <div style="display:flex;gap:1.5rem;margin-top:.6rem">
             <div class="kpi-inline">
               <span class="kpi-card__eyebrow">Ventas</span>
               <span class="kpi-card__value" id="kpi-sales-period">—</span>
@@ -178,7 +179,6 @@
             <button id="contabilium-btn" type="button" class="btn btn--secondary">📄 Contabilium</button>
             <input type="file" id="contabilium-file" accept=".xlsx" hidden>
             <button id="export-btn" type="button" class="btn btn--secondary" disabled>↗ Añadir a Sheets</button>
-            <button id="full-export-btn" type="button" class="btn btn--secondary" disabled>↺ Re-exportar todo</button>
           </div>
         </div>
         <div class="meta-group__sep"></div>
@@ -260,6 +260,7 @@
         <div class="debug-body">
           <button id="import-btn" type="button" class="btn btn--secondary">Importar historial 2026</button>
           <button id="enrich-shipping-btn" type="button" class="btn btn--secondary">Re-enriquecer costos envío</button>
+          <button id="full-export-btn" type="button" class="btn btn--secondary">↺ Re-exportar todo</button>
           <button id="clear-cache-btn" type="button" class="btn btn--danger">✕ Limpiar caché</button>
           <button id="clear-dates-btn" type="button" class="btn btn--danger">✕ Limpiar Fecha Factura</button>
           <span id="clear-cache-status" class="debug-status"></span>
@@ -286,9 +287,9 @@
       const EXPANDED_COLS  = ['Orden ID', 'Fecha Compra', 'Nombre', 'Pago', 'Cupón', 'Retencion IIBB', 'Imp SIRTAC', 'Suma Impuestos', 'Costo Envio', 'Neto', 'Provincia', 'Localidad', 'Orígen', 'Estado', 'Fecha Factura', 'Nº Factura'];
 
       const TAX_CATEGORIES = {
-        A: 6_800_000,  B: 10_200_000, C: 14_400_000, D: 20_200_000,
-        E: 28_500_000, F: 40_000_000, G: 51_000_000, H: 61_344_853,
-        J: 76_500_000, K: 94_805_682,
+        A: 10_277_988.13, B: 15_058_447.71, C: 21_113_696.52, D: 26_212_853.42,
+        E: 30_833_964.37, F: 38_642_048.36, G: 46_211_109.37, H: 70_113_407.33,
+        I: 78_479_211.62, J: 89_872_640.30, K: 108_357_084.05,
       };
 
       const NOW           = new Date();
@@ -377,8 +378,9 @@
       // ── Sparkline ─────────────────────────────────────────────────────────
 
       const drawMonthSparkline = (svgEl, values, color = '#1BBFA1') => {
-        const n = values.length; // = DAYS_IN_MONTH
-        if (!n) return;
+        const active = values.length; // days with actual data (up to today)
+        const n = DAYS_IN_MONTH;     // full month, used for x-axis scale and labels
+        if (!active) return;
         const max  = Math.max(...values, 1);
         const W = 200, chartH = 34, labelY = 47;
         const xOf  = (d) => ((d - 1) / Math.max(n - 1, 1)) * W;
@@ -387,11 +389,11 @@
         const pts  = values.map((v, i) => `${xOf(i + 1).toFixed(1)},${yOf(v).toFixed(1)}`).join(' ');
         const fill = [
           ...values.map((v, i) => `${xOf(i + 1).toFixed(1)},${yOf(v).toFixed(1)}`),
-          `${W},${chartH}`, `0,${chartH}`,
+          `${xOf(active).toFixed(1)},${chartH}`, `0,${chartH}`,
         ];
 
         const weekLines = [7, 14, 21]
-          .filter((d) => d < n)
+          .filter((d) => d < active)
           .map((d) => `<line x1="${xOf(d).toFixed(1)}" y1="1" x2="${xOf(d).toFixed(1)}" y2="${chartH}" stroke="var(--border)" stroke-width="0.75"/>`)
           .join('');
 
@@ -568,8 +570,8 @@
         monthFill.className = `kpi-bar-row__fill${monthPct >= 90 ? ' kpi-bar-row__fill--err' : monthPct >= 70 ? ' kpi-bar-row__fill--warn' : ''}`;
 
         // Sparklines — card 1 only
-        drawMonthSparkline($('spark-sales'), salesCountBuckets);
-        drawMonthSparkline($('spark-neto'),  salesNetoBuckets, '#15803d');
+        drawMonthSparkline($('spark-sales'), salesCountBuckets.slice(0, TODAY_DAY));
+        drawMonthSparkline($('spark-neto'),  salesNetoBuckets.slice(0, TODAY_DAY), '#15803d');
 
         // Period
         const fromEl = $('period-from');
@@ -1119,7 +1121,6 @@
         if (data.sheet_url) SHEET_URL = data.sheet_url;
         renderTable(data);
         exportBtn.disabled = false;
-        fullExportBtn.disabled = false;
         updateMeta(data.meta);
         updateKPIs();
         window.PIGNUS_DATA = {
