@@ -108,12 +108,11 @@
               <option value="K">Cat. K</option>
             </select>
           </div>
-          <div class="kpi-card__value" id="kpi-remaining" style="font-size:2.05rem">—</div>
-          <div class="kpi-card__bars">
+          <div class="kpi-card__bars" style="margin-top:auto">
             <div class="kpi-bar-row">
               <div class="kpi-bar-row__header">
-                <span class="kpi-bar-row__label">Este año</span>
-                <span class="kpi-bar-row__amount" id="bar-year-amount"></span>
+                <span class="kpi-bar-row__label" id="bar-year-label">ANUAL</span>
+                <span class="kpi-bar-row__amount" id="bar-year-limit"></span>
               </div>
               <div class="kpi-bar-row__track">
                 <div class="kpi-bar-row__fill" id="bar-year-fill" style="width:0%"></div>
@@ -121,8 +120,8 @@
             </div>
             <div class="kpi-bar-row">
               <div class="kpi-bar-row__header">
-                <span class="kpi-bar-row__label">Este mes</span>
-                <span class="kpi-bar-row__amount" id="bar-month-amount"></span>
+                <span class="kpi-bar-row__label" id="bar-month-label">MENSUAL</span>
+                <span class="kpi-bar-row__amount" id="bar-month-limit"></span>
               </div>
               <div class="kpi-bar-row__track">
                 <div class="kpi-bar-row__fill" id="bar-month-fill" style="width:0%"></div>
@@ -535,7 +534,6 @@
         const catMax     = TAX_CATEGORIES[catKey] || TAX_CATEGORIES.H;
         const monthlyMax = catMax / 12;
         const remaining  = Math.max(0, catMax - factYear);
-        $('kpi-remaining').textContent = ars.format(remaining);
 
         pendingForLimit.sort((a, b) => a.date - b.date);
         const invoiceableLimit = Math.max(0, monthlyMax - factMonth);
@@ -559,8 +557,10 @@
         const yearPct  = Math.min(100, (factYear  / catMax)     * 100);
         const monthPct = Math.min(100, (factMonth / monthlyMax) * 100);
 
-        $('bar-year-amount').textContent  = `${yearPct.toFixed(1)}%  ·  ${ars.format(factYear)}`;
-        $('bar-month-amount').textContent = `${monthPct.toFixed(1)}%  ·  ${ars.format(factMonth)}`;
+        $('bar-year-label').textContent  = `ANUAL — ${yearPct.toFixed(1)}%`;
+        $('bar-year-limit').textContent  = ars.format(catMax);
+        $('bar-month-label').textContent = `MENSUAL — ${monthPct.toFixed(1)}%`;
+        $('bar-month-limit').textContent = ars.format(monthlyMax);
 
         const yearFill  = $('bar-year-fill');
         const monthFill = $('bar-month-fill');
