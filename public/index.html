@@ -259,6 +259,7 @@
         <summary>Aux Debug Tools</summary>
         <div class="debug-body">
           <button id="import-btn" type="button" class="btn btn--secondary">Importar historial 2026</button>
+          <button id="enrich-shipping-btn" type="button" class="btn btn--secondary">Re-enriquecer costos envío</button>
           <button id="clear-cache-btn" type="button" class="btn btn--danger">✕ Limpiar caché</button>
           <button id="clear-dates-btn" type="button" class="btn btn--danger">✕ Limpiar Fecha Factura</button>
           <span id="clear-cache-status" class="debug-status"></span>
@@ -349,7 +350,8 @@
       };
 
       const todayBtn        = $('today-btn');
-      const importBtn       = $('import-btn');
+      const importBtn           = $('import-btn');
+      const enrichShippingBtn   = $('enrich-shipping-btn');
       const addRowBtn       = $('add-row-btn');
       const addGraBtn       = $('add-gra-btn');
       const expandBtn       = $('expand-btn');
@@ -909,6 +911,25 @@
 
         return { tr, inputs };
       };
+
+      // ── Re-enrich shipping costs ──────────────────────────────────────────
+      enrichShippingBtn.addEventListener('click', async () => {
+        enrichShippingBtn.disabled = true;
+        setStatus('Re-enriqueciendo costos de envío…');
+        let done = false;
+        while (!done) {
+          try {
+            const res = await fetch('/api/orders/enrich-shipping-costs');
+            if (!res.ok) break;
+            const data = await res.json();
+            applyData(data);
+            done = data.enrichDone;
+            if (!done) setStatus(`Re-enriqueciendo costos de envío… (${data.remaining} restantes)`);
+          } catch { break; }
+        }
+        setStatus('Costos de envío re-enriquecidos.', 'ok');
+        enrichShippingBtn.disabled = false;
+      });
 
       // ── Clear cache ───────────────────────────────────────────────────────
       clearCacheBtn.addEventListener('click', async () => {
