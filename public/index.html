@@ -110,11 +110,11 @@
           </div>
           <div style="display:flex;flex-direction:column;gap:.75rem;margin-top:auto">
             <div>
-              <div class="kpi-card__eyebrow" style="margin-bottom:.2rem">Anual facturado</div>
+              <div class="kpi-card__eyebrow" style="margin-bottom:.2rem">Facturado últimos 12 meses</div>
               <span id="tax-year-billed" style="font-size:1.1rem;font-weight:600">—</span><span id="tax-year-limit" style="color:var(--ink-3);font-size:var(--text-sm)"></span>
             </div>
             <div>
-              <div class="kpi-card__eyebrow" style="margin-bottom:.2rem">Mensual facturado</div>
+              <div class="kpi-card__eyebrow" style="margin-bottom:.2rem">Facturado últimos 30 días</div>
               <span id="tax-month-billed" style="font-size:1.1rem;font-weight:600">—</span><span id="tax-month-limit" style="color:var(--ink-3);font-size:var(--text-sm)"></span>
             </div>
           </div>
@@ -266,12 +266,12 @@
     <script>
       let SHEET_URL = null;
       const HISTORY_CUTOFF = new Date(new Date().getFullYear(), new Date().getMonth() - 11, 1);
-      const MONEY_COLS   = new Set(['Pago', 'Recargo MP', 'Retencion IIBB', 'Imp SIRTAC', 'Suma Impuestos', 'Costo Envio', 'Neto', 'Cupón']);
-      const READONLY_COLS = new Set(['Suma Impuestos', 'Neto']);
+      const MONEY_COLS   = new Set(['Pago', 'Recargo MP', 'Retencion IIBB', 'Imp SIRTAC', 'Suma Impuestos', 'Costo Envio', 'Neto', 'Monto Facturable', 'Cupón']);
+      const READONLY_COLS = new Set(['Suma Impuestos', 'Neto', 'Monto Facturable']);
       const DATE_COLS    = new Set(['Fecha Compra', 'Fecha Factura']);
 
-      const COLLAPSED_COLS = ['Orden ID', 'Fecha Compra', 'Nombre', 'Pago', 'Suma Impuestos', 'Costo Envio', 'Neto', 'Provincia', 'Orígen', 'Estado', 'Fecha Factura', 'Nº Factura'];
-      const EXPANDED_COLS  = ['Orden ID', 'Fecha Compra', 'Nombre', 'Pago', 'Cupón', 'Retencion IIBB', 'Imp SIRTAC', 'Suma Impuestos', 'Costo Envio', 'Neto', 'Provincia', 'Localidad', 'Orígen', 'Estado', 'Fecha Factura', 'Nº Factura'];
+      const COLLAPSED_COLS = ['Orden ID', 'Fecha Compra', 'Nombre', 'Pago', 'Suma Impuestos', 'Costo Envio', 'Neto', 'Monto Facturable', 'Provincia', 'Orígen', 'Estado', 'Fecha Factura', 'Nº Factura'];
+      const EXPANDED_COLS  = ['Orden ID', 'Fecha Compra', 'Nombre', 'Pago', 'Cupón', 'Retencion IIBB', 'Imp SIRTAC', 'Suma Impuestos', 'Costo Envio', 'Neto', 'Monto Facturable', 'Provincia', 'Localidad', 'Orígen', 'Estado', 'Fecha Factura', 'Nº Factura'];
 
       const TAX_CATEGORIES = {
         A: 10_277_988.13, B: 15_058_447.71, C: 21_113_696.52, D: 26_212_853.42,
@@ -428,7 +428,7 @@
         let netoMonth  = 0, netoPrevMonth  = 0;
 
         // Card 2 & 3 — invoiced rows only (Nº Factura set), dated by Fecha Factura
-        let factMonth = 0, factYear = 0;
+        let factMonth = 0, factYear = 0, fact30Days = 0;
 
         // Pending — rows without Nº Factura
         let pendingCount = 0, pendingAmount = 0, pendingMonthCount = 0;
@@ -438,6 +438,7 @@
         const prevMonthYear  = CURRENT_MONTH === 0 ? CURRENT_YEAR - 1 : CURRENT_YEAR;
         const TODAY_DAY      = NOW.getDate(); // cap prev-month window to same day of month
         const trailing12Start = new Date(CURRENT_YEAR, CURRENT_MONTH - 11, 1); // rolling 12-month window for Monotributo
+        const trailing30Start = new Date(NOW.getTime() - 30 * 24 * 60 * 60 * 1000);
 
         for (const row of allRows) {
           const compraDate = parseDate(row[fechaIdx]);
@@ -469,11 +470,12 @@
             if (fd >= trailing12Start && fd <= NOW) {
               factYear += neto + costo;
               if (fd.getFullYear() === CURRENT_YEAR && fd.getMonth() === CURRENT_MONTH) factMonth += neto + costo;
+              if (fd >= trailing30Start) fact30Days += neto + costo;
             }
           }
 
           // Pending
-          if (!numFact) {
+          if (!numFact && yr > 2024) {
             pendingCount++;
             pendingAmount += neto + costo;
             if (yr === CURRENT_YEAR && mo === CURRENT_MONTH) pendingMonthCount++;
@@ -538,7 +540,7 @@
 
         $('tax-year-billed').textContent  = ars.format(factYear);
         $('tax-year-limit').textContent   = ` / ${ars.format(catMax)}`;
-        $('tax-month-billed').textContent = ars.format(factMonth);
+        $('tax-month-billed').textContent = ars.format(fact30Days);
         $('tax-month-limit').textContent  = ` / ${ars.format(monthlyMax)}`;
         yearFill.className  = `kpi-bar-row__fill${yearPct  >= 90 ? ' kpi-bar-row__fill--err' : yearPct  >= 70 ? ' kpi-bar-row__fill--warn' : ''}`;
         monthFill.className = `kpi-bar-row__fill${monthPct >= 90 ? ' kpi-bar-row__fill--err' : monthPct >= 70 ? ' kpi-bar-row__fill--warn' : ''}`;

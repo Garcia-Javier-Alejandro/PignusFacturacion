@@ -9,7 +9,7 @@ const BATCH = 20;
 export async function onRequestGet({ env }) {
   const cache = await getOrdersCache(env);
 
-  const needsEnrich = (o) => o._sender_shipping_cost === undefined && (o.shipping?.id);
+  const needsEnrich = (o) => (o._sender_shipping_cost === undefined || o._receiver_shipping_cost === undefined) && (o.shipping?.id);
   const toEnrich = cache.orders.filter(needsEnrich).slice(0, BATCH);
 
   if (toEnrich.length > 0) {
@@ -28,13 +28,15 @@ export async function onRequestGet({ env }) {
         });
         if (res.ok) {
           const data = await res.json();
-          order._sender_shipping_cost = (data.senders || [])
-            .reduce((sum, s) => sum + Number(s.cost || 0), 0);
+          order._sender_shipping_cost   = (data.senders || []).reduce((sum, s) => sum + Number(s.cost || 0), 0);
+          order._receiver_shipping_cost = Number(data.receiver?.cost || 0);
         } else {
-          order._sender_shipping_cost = null;
+          order._sender_shipping_cost   = null;
+          order._receiver_shipping_cost = null;
         }
       } catch {
-        order._sender_shipping_cost = null;
+        order._sender_shipping_cost   = null;
+        order._receiver_shipping_cost = null;
       }
     }
 

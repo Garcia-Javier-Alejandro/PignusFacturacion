@@ -23,6 +23,7 @@ export const OUTPUT_HEADERS = [
   'Suma Impuestos',
   'Costo Envio',
   'Neto',
+  'Monto Facturable',
   'Localidad',
   'Provincia',
   'Orígen',
@@ -58,6 +59,9 @@ export function transformOrderToRow(order) {
     ? toNumber(order._sender_shipping_cost)
     : (sumPaymentsField(payments, 'shipping_cost') || toNumber(order.shipping?.cost));
   const neto = pago - (recargoMp + retencionIibb + impSirtac + costoEnvio);
+  const montoFacturable = pago + (order._receiver_shipping_cost !== undefined
+    ? toNumber(order._receiver_shipping_cost)
+    : sumPaymentsField(payments, 'shipping_cost'));
 
   return [
     String(order.id || ''),
@@ -71,6 +75,7 @@ export function transformOrderToRow(order) {
     sumaImpuestos,
     costoEnvio,
     neto,
+    montoFacturable,
     nameOf(order.shipping?.receiver_address?.city),
     nameOf(order.shipping?._state),
     'ML',
