@@ -9,6 +9,7 @@ export async function getOrdersCache(env) {
     probe_total: 0,
     next_older_offset: null,
     oldest_date: null,
+    newest_date: null,
     updated_at: null,
   };
 }
@@ -75,6 +76,7 @@ export function mergeIntoCache(cache, { newOrders, total, fetchedOffset, isOlder
   const allOrders = [...(cache.orders || []), ...added];
   allOrders.sort((a, b) => new Date(b.date_created).getTime() - new Date(a.date_created).getTime());
 
+  const newestDate = allOrders.length > 0 ? allOrders[0].date_created : null;
   const oldestDate = allOrders.length > 0 ? allOrders[allOrders.length - 1].date_created : null;
 
   const nextOlderOffset = isOlderFetch
@@ -87,6 +89,7 @@ export function mergeIntoCache(cache, { newOrders, total, fetchedOffset, isOlder
     probe_total: total ?? cache.probe_total,
     next_older_offset: nextOlderOffset,
     oldest_date: oldestDate,
+    newest_date: newestDate,
     updated_at: new Date().toISOString(),
   };
 }

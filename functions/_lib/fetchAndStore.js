@@ -24,6 +24,7 @@ export async function fetchEnrichAndStore(env, { orders, total, fetchedOffset, i
       loaded: updated.orders.length,
       total: updated.probe_total,
       oldest_date: updated.oldest_date,
+      newest_date: updated.newest_date,
       next_older_offset: updated.next_older_offset,
       done: isCacheDone(updated),
     },

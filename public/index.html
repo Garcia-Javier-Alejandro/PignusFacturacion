@@ -190,12 +190,10 @@
         <span style="flex:1;min-width:.5rem"></span>
         <span id="meta-count">—</span>
         <span class="meta-sep">·</span>
-        <span id="meta-oldest">Más antigua: —</span>
-        <span class="meta-sep">·</span>
         <div class="progress-wrap">
+          <span id="meta-oldest">—</span>
           <div class="progress-bar"><div class="progress-bar__fill" id="progress-fill" style="width:0%"></div></div>
-          <span id="progress-text">0%</span>
-          <span class="progress-label">de 2026</span>
+          <span id="meta-newest">—</span>
         </div>
         <button id="expand-btn" type="button" class="btn btn--ghost btn--expand">Expandir →</button>
       </div>
@@ -257,7 +255,7 @@
       <details class="debug-section">
         <summary>Aux Debug Tools</summary>
         <div class="debug-body">
-          <button id="import-btn" type="button" class="btn btn--secondary">Importar historial (12 meses)</button>
+          <button id="import-btn" type="button" class="btn btn--secondary">Re importar historial</button>
           <button id="enrich-shipping-btn" type="button" class="btn btn--secondary">Re-enriquecer costos envío</button>
           <button id="full-export-btn" type="button" class="btn btn--secondary">↺ Re-exportar todo</button>
           <button id="clear-cache-btn" type="button" class="btn btn--danger">✕ Limpiar caché</button>
@@ -360,8 +358,8 @@
       const statusEl        = $('status');
       const metaCount       = $('meta-count');
       const metaOldest      = $('meta-oldest');
+      const metaNewest      = $('meta-newest');
       const progressFill    = $('progress-fill');
-      const progressText    = $('progress-text');
       const contabiliumBtn  = $('contabilium-btn');
       const contabiliumFile = $('contabilium-file');
       const ctbModal        = $('ctb-modal');
@@ -595,10 +593,10 @@
       const updateMeta = (meta) => {
         if (!meta) return;
         const pct = calcProgress(meta.oldest_date);
-        metaCount.textContent  = `${meta.loaded} pedidos`;
-        metaOldest.textContent = `Más antigua: ${formatDate(meta.oldest_date) || '—'}`;
+        metaCount.textContent     = `${meta.loaded} pedidos`;
+        metaOldest.textContent    = formatDate(meta.oldest_date) || '—';
+        metaNewest.textContent    = formatDate(meta.newest_date) || '—';
         progressFill.style.width  = `${pct}%`;
-        progressText.textContent  = `${pct}%`;
         if (meta.done && !importRunning) {
           importBtn.textContent = 'Historia completa ✓';
           importBtn.disabled    = true;
@@ -947,7 +945,7 @@
           editsState = { manualRows: [], hiddenIds: [], mlOverrides: {}, invoiceRows: [] };
           lastFetchedRows = []; lastHeaders = [];
           table.innerHTML = '';
-          importBtn.textContent = 'Importar historial (12 meses)'; importBtn.disabled = false;
+          importBtn.textContent = 'Re importar historial'; importBtn.disabled = false;
           updateMeta({ loaded: 0, oldest_date: null });
           clearCacheSt.textContent = '✓ Caché limpiada';
         } catch (e) {
@@ -1172,7 +1170,7 @@
 
       const stopImport = () => {
         importRunning = false;
-        importBtn.textContent = 'Importar historial (12 meses)';
+        importBtn.textContent = 'Re importar historial';
       };
 
       importBtn.addEventListener('click', async () => {
@@ -1191,7 +1189,7 @@
             await new Promise((r) => setTimeout(r, 2000));
           } catch (err) { setStatus(err.message, 'err'); importRunning = false; break; }
         }
-        importBtn.textContent = 'Importar historial (12 meses)';
+        importBtn.textContent = 'Re importar historial';
         if (importCompletedNaturally) {
           setStatus('Enriqueciendo datos adicionales…');
           await enrichExtra();
