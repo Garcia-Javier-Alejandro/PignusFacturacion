@@ -310,6 +310,7 @@
       const parseDate = (val) => {
         if (!val) return new Date(NaN);
         const s = String(val);
+        if (/^\d{2}\/\d{2}\/\d{4}$/.test(s)) return parseDMY(s);
         return new Date(s.length === 10 ? s + 'T00:00:00' : s);
       };
 
@@ -327,11 +328,7 @@
         return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
       };
 
-      const toDateInputVal = (val) => {
-        if (!val) return '';
-        const d = new Date(val);
-        return Number.isNaN(d.getTime()) ? '' : d.toISOString().slice(0, 10);
-      };
+      const toDateInputVal = (val) => formatDate(val);
 
       const calcProgress = (oldestDateStr) => {
         if (!oldestDateStr) return 0;
@@ -852,14 +849,17 @@
             inputs[h] = span;
           } else {
             const isNum = MONEY_COLS.has(h);
+            const isDate = DATE_COLS.has(h);
             const input = document.createElement('input');
-            input.type = isNum ? 'number' : (DATE_COLS.has(h) ? 'date' : 'text');
+            input.type = isNum ? 'number' : 'text';
             input.step = '0.01';
             input.className = `manual-input${isNum ? ' num' : ''}`;
+            if (isDate) { input.maxLength = 10; input.inputMode = 'numeric'; input.placeholder = 'dd/mm/aaaa'; }
             const val = initialValues[i];
             if (val !== undefined && val !== null && val !== '') {
-              input.value = DATE_COLS.has(h) ? toDateInputVal(val) : val;
+              input.value = isDate ? toDateInputVal(val) : val;
             }
+            if (isDate) input.addEventListener('input', autoFmtDate);
             if (['Pago', 'Recargo MP', 'Retencion IIBB', 'Imp SIRTAC', 'Costo Envio'].includes(h)) {
               input.addEventListener('input', () => recalcEditRow(inputs));
             }
