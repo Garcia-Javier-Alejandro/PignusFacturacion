@@ -67,15 +67,25 @@ function slimOrder(order) {
 // fetch on a fresh cache can never accidentally set the "done" signal.
 export function mergeIntoCache(cache, { newOrders, total, fetchedOffset, isOlderFetch }) {
   const seenSet = new Set(cache.seen_ids || []);
+  const existingById = new Map((cache.orders || []).map((o) => [String(o.id), o]));
 
-  const added = newOrders
-    .filter((order) => {
-      const id = String(order.id);
-      if (seenSet.has(id)) return false;
-      seenSet.add(id);
-      return true;
-    })
-    .map(slimOrder);
+  const added = [];
+  for (const order of newOrders) {
+    const id = String(order.id);
+    const slim = slimOrder(order);
+    if (seenSet.has(id)) {
+      const existing = existingById.get(id);
+      if (existing) {
+        // Backfill tax fields that were missing/zero — fixes orders cached before ML
+        // billing detail was populated (mergeIntoCache was previously add-only).
+        if ((existing._iibb == null || existing._iibb === 0) && slim._iibb) existing._iibb = slim._iibb;
+        if ((existing._sirtac == null || existing._sirtac === 0) && slim._sirtac) existing._sirtac = slim._sirtac;
+      }
+      continue;
+    }
+    seenSet.add(id);
+    added.push(slim);
+  }
 
   const allOrders = [...(cache.orders || []), ...added];
   allOrders.sort((a, b) => new Date(b.date_created).getTime() - new Date(a.date_created).getTime());

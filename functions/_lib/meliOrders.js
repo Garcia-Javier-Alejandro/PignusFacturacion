@@ -214,8 +214,9 @@ export async function fetchBillingTaxes(orders, env) {
         for (const tax of payment.tax_details || []) {
           const detail = (tax.mov_detail || '').toLowerCase();
           const entity = (tax.mov_financial_entity || '').toLowerCase();
-          if (detail.includes('sirtac')) sirtac += Number(tax.original_amount || 0);
-          else if (detail.includes('iibb') || entity.includes('iibb')) iibb += Number(tax.original_amount || 0);
+          const amount = Number(tax.original_amount || 0);
+          if (detail.includes('sirtac')) sirtac += amount;
+          else if (detail.startsWith('tax_withholding') || detail.includes('iibb') || entity.includes('iibb')) iibb += amount;
         }
       }
       taxes.set(String(item.order_id), { iibb, sirtac });
