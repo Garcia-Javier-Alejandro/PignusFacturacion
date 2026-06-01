@@ -1219,7 +1219,8 @@
           if (!res.ok) throw new Error(data.error || 'Error al exportar.');
           if (data.sheet_url) SHEET_URL = data.sheet_url;
           setStatus(`${data.exported_rows} filas nuevas añadidas. ${data.skipped_existing} ya presentes.`, 'ok');
-          window.open(SHEET_URL, '_blank');
+          const lastRow = 1 + (data.skipped_existing || 0) + (data.exported_rows || 0);
+          window.open(SHEET_URL ? `${SHEET_URL}#gid=0&range=A${lastRow}` : SHEET_URL, '_blank');
         } catch (err) { setStatus(err.message, 'err'); }
         finally { exportBtn.disabled = false; }
       });
@@ -1233,7 +1234,8 @@
           if (!res.ok) throw new Error(data.error || 'Error al re-exportar.');
           if (data.sheet_url) SHEET_URL = data.sheet_url;
           setStatus(`Re-exportación completa: ${data.exported_rows} filas.`, 'ok');
-          window.open(SHEET_URL, '_blank');
+          const lastRow = 1 + (data.exported_rows || 0);
+          window.open(SHEET_URL ? `${SHEET_URL}#gid=0&range=A${lastRow}` : SHEET_URL, '_blank');
         } catch (err) { setStatus(err.message, 'err'); }
         finally { fullExportBtn.disabled = false; }
       });
