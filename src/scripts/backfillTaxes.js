@@ -90,9 +90,24 @@ const YEAR_FROM = process.env.YEAR_FROM || '2026';
 const candidates = cache.orders.filter((o) => (o.date_created || '') >= YEAR_FROM);
 console.log(`candidates (date>=${YEAR_FROM}): ${candidates.length}`);
 
-const stats = { fetched: 0, changed: 0, unchanged: 0, missingInResponse: 0, batchErrors: 0 };
+const stats = { fetched: 0, changed: 0, unchanged: 0, missingInResponse: 0, recoveredIndividually: 0, stillMissing: 0, batchErrors: 0 };
 const orderById = new Map(cache.orders.map((o) => [String(o.id), o]));
 const changes = [];
+const missingIds = [];
+
+function applyResult({ id, iibb, sirtac }) {
+  const order = orderById.get(id);
+  if (!order) return;
+  const before = { _iibb: order._iibb, _sirtac: order._sirtac };
+  if (before._iibb === iibb && before._sirtac === sirtac) {
+    stats.unchanged++;
+    return;
+  }
+  stats.changed++;
+  changes.push({ id, before, after: { _iibb: iibb, _sirtac: sirtac } });
+  order._iibb = iibb;
+  order._sirtac = sirtac;
+}
 
 for (let i = 0; i < candidates.length; i += BATCH) {
   const slice = candidates.slice(i, i + BATCH);
@@ -105,25 +120,40 @@ for (let i = 0; i < candidates.length; i += BATCH) {
   }
   stats.fetched += ids.length;
   const returnedIds = new Set(results.map((r) => r.id));
-  for (const id of ids) if (!returnedIds.has(id)) stats.missingInResponse++;
-
-  for (const { id, iibb, sirtac } of results) {
-    const order = orderById.get(id);
-    const before = { _iibb: order._iibb, _sirtac: order._sirtac };
-    if (before._iibb === iibb && before._sirtac === sirtac) {
-      stats.unchanged++;
-      continue;
+  for (const id of ids) {
+    if (!returnedIds.has(id)) {
+      stats.missingInResponse++;
+      missingIds.push(id);
     }
-    stats.changed++;
-    changes.push({ id, before, after: { _iibb: iibb, _sirtac: sirtac } });
-    order._iibb = iibb;
-    order._sirtac = sirtac;
   }
+
+  for (const result of results) applyResult(result);
 
   if ((i / BATCH + 1) % 10 === 0) {
     console.log(`  progress: ${i + slice.length}/${candidates.length} processed, ${stats.changed} changed`);
   }
   await sleep(8000);
+}
+
+// Fallback: ML's batch endpoint silently omits orders whose billing document
+// is in PROCESSING state. Individual queries to the same endpoint return them.
+if (missingIds.length) {
+  console.log(`\nfallback: ${missingIds.length} orders missing from batch responses, retrying individually`);
+  for (let i = 0; i < missingIds.length; i++) {
+    const id = missingIds[i];
+    const { ok, results } = await fetchBatchTaxes([id], accessToken);
+    if (!ok) {
+      stats.stillMissing++;
+      continue;
+    }
+    if (results.length === 0) {
+      stats.stillMissing++;
+    } else {
+      stats.recoveredIndividually++;
+      for (const result of results) applyResult(result);
+    }
+    await sleep(2000);
+  }
 }
 
 console.log('\n=== summary ===');

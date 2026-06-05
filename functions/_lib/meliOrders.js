@@ -194,33 +194,55 @@ export async function fetchCouponAmount(orderId, accessToken) {
 
 const BILLING_BATCH = 10;
 
+function computeTaxesFromItem(item) {
+  let iibb = 0;
+  let sirtac = 0;
+  for (const payment of item.payment_info || []) {
+    for (const tax of payment.tax_details || []) {
+      const detail = (tax.mov_detail || '').toLowerCase();
+      const entity = (tax.mov_financial_entity || '').toLowerCase();
+      const amount = Number(tax.original_amount || 0);
+      if (detail.includes('sirtac')) sirtac += amount;
+      else if (detail.startsWith('tax_withholding') || detail.includes('iibb') || entity.includes('iibb')) iibb += amount;
+    }
+  }
+  return { iibb, sirtac };
+}
+
+async function fetchBillingDetails(orderIds, accessToken) {
+  const res = await fetch(
+    `https://api.mercadolibre.com/billing/integration/group/ML/order/details?order_ids=${orderIds.join(',')}`,
+    { headers: { accept: 'application/json', authorization: `Bearer ${accessToken}` } },
+  );
+  if (!res.ok) return null;
+  return res.json();
+}
+
 export async function fetchBillingTaxes(orders, env) {
   const tokens = await getValidAccessToken(env);
   const taxes = new Map();
+  const requestedIds = orders.map((o) => String(o.id));
 
-  for (let i = 0; i < orders.length; i += BILLING_BATCH) {
-    const batch = orders.slice(i, i + BILLING_BATCH);
-    const orderIds = batch.map((o) => o.id).join(',');
-    const res = await fetch(
-      `https://api.mercadolibre.com/billing/integration/group/ML/order/details?order_ids=${orderIds}`,
-      { headers: { accept: 'application/json', authorization: `Bearer ${tokens.access_token}` } },
-    );
-    if (!res.ok) continue;
-    const data = await res.json();
+  for (let i = 0; i < requestedIds.length; i += BILLING_BATCH) {
+    const batchIds = requestedIds.slice(i, i + BILLING_BATCH);
+    const data = await fetchBillingDetails(batchIds, tokens.access_token);
+    if (!data) continue;
     for (const item of data.results || []) {
-      let iibb = 0;
-      let sirtac = 0;
-      for (const payment of item.payment_info || []) {
-        for (const tax of payment.tax_details || []) {
-          const detail = (tax.mov_detail || '').toLowerCase();
-          const entity = (tax.mov_financial_entity || '').toLowerCase();
-          const amount = Number(tax.original_amount || 0);
-          if (detail.includes('sirtac')) sirtac += amount;
-          else if (detail.startsWith('tax_withholding') || detail.includes('iibb') || entity.includes('iibb')) iibb += amount;
-        }
-      }
-      taxes.set(String(item.order_id), { iibb, sirtac });
+      taxes.set(String(item.order_id), computeTaxesFromItem(item));
     }
   }
+
+  // Fallback: ML's batch endpoint omits orders whose billing document is still
+  // PROCESSING, even when tax data is computable. Individual queries return
+  // them, so retry one-by-one for any order missing from the batch responses.
+  const missing = requestedIds.filter((id) => !taxes.has(id));
+  for (const id of missing) {
+    const data = await fetchBillingDetails([id], tokens.access_token);
+    if (!data) continue;
+    for (const item of data.results || []) {
+      taxes.set(String(item.order_id), computeTaxesFromItem(item));
+    }
+  }
+
   return taxes;
 }
