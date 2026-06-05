@@ -551,9 +551,6 @@
         $('tax-year-limit').textContent   = ` / ${ars.format(catMax)}`;
         $('tax-month-billed').textContent = ars.format(fact30Days);
         $('tax-month-limit').textContent  = ` / ${ars.format(monthlyMax)}`;
-        yearFill.className  = `kpi-bar-row__fill${yearPct  >= 90 ? ' kpi-bar-row__fill--err' : yearPct  >= 70 ? ' kpi-bar-row__fill--warn' : ''}`;
-        monthFill.className = `kpi-bar-row__fill${monthPct >= 90 ? ' kpi-bar-row__fill--err' : monthPct >= 70 ? ' kpi-bar-row__fill--warn' : ''}`;
-
         // Sparklines — card 1 only
         drawMonthSparkline($('spark-sales'), salesCountBuckets.slice(0, TODAY_DAY));
         drawMonthSparkline($('spark-neto'),  salesNetoBuckets.slice(0, TODAY_DAY), '#15803d');
