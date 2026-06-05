@@ -87,12 +87,8 @@ const cache = kvGet(CACHE_KEY);
 console.log(`cache: ${cache.orders.length} orders, updated_at=${cache.updated_at}`);
 
 const YEAR_FROM = process.env.YEAR_FROM || '2026';
-const candidates = cache.orders.filter((o) => {
-  const inRange = (o.date_created || '') >= YEAR_FROM;
-  const taxMissing = o._iibb == null || o._sirtac == null || o._iibb === 0 || o._sirtac === 0;
-  return inRange && taxMissing;
-});
-console.log(`candidates (date>=${YEAR_FROM} AND iibb/sirtac null or 0): ${candidates.length}`);
+const candidates = cache.orders.filter((o) => (o.date_created || '') >= YEAR_FROM);
+console.log(`candidates (date>=${YEAR_FROM}): ${candidates.length}`);
 
 const stats = { fetched: 0, changed: 0, unchanged: 0, missingInResponse: 0, batchErrors: 0 };
 const orderById = new Map(cache.orders.map((o) => [String(o.id), o]));

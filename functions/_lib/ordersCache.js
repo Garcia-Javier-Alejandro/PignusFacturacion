@@ -76,10 +76,11 @@ export function mergeIntoCache(cache, { newOrders, total, fetchedOffset, isOlder
     if (seenSet.has(id)) {
       const existing = existingById.get(id);
       if (existing) {
-        // Backfill tax fields that were missing/zero — fixes orders cached before ML
-        // billing detail was populated (mergeIntoCache was previously add-only).
-        if ((existing._iibb == null || existing._iibb === 0) && slim._iibb) existing._iibb = slim._iibb;
-        if ((existing._sirtac == null || existing._sirtac === 0) && slim._sirtac) existing._sirtac = slim._sirtac;
+        // Update tax fields whenever the re-fetched value is higher — catches orders
+        // that had partial IIBB (e.g. only Tucumán's $1) before the tax_withholding
+        // matcher was added for Santa Fe / Corrientes.
+        if (slim._iibb != null && slim._iibb > (existing._iibb || 0)) existing._iibb = slim._iibb;
+        if (slim._sirtac != null && slim._sirtac > (existing._sirtac || 0)) existing._sirtac = slim._sirtac;
       }
       continue;
     }
