@@ -1,0 +1,8 @@
+name = "pignusfacturacion-cron"
+main = "src/index.js"
+compatibility_date = "2026-04-22"
+
+# 12:00 UTC = 09:00 ART, daily. Pulls anything new in the 14-day window so
+# missed days (delayed payments, skipped manual syncs) can't go stale.
+[triggers]
+crons = ["0 12 * * *"]
