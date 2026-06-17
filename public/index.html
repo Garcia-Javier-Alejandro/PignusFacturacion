@@ -39,6 +39,14 @@
           <span class="header__pulse-dot"></span>
           <span id="header-pulse-text"></span>
         </div>
+        <button class="iconbtn" id="feedback-open-btn" type="button" title="Reportar un problema" aria-label="Reportar un problema">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M9 7a3 3 0 0 1 6 0v9a3 3 0 0 1-6 0z"/>
+            <path d="M9 7 6 4M15 7l3-3"/>
+            <path d="M6 11H3M21 11h-3M6 15H3M21 15h-3"/>
+            <line x1="12" y1="7" x2="12" y2="16"/>
+          </svg>
+        </button>
         <button class="header__avatar" id="header-avatar" title="" style="display:none"></button>
       </div>
     </header>
@@ -262,6 +270,76 @@
         <button id="auth-btn" type="button" class="btn btn--ghost">Re-authorize ML ↗</button>
       </div>
     </main>
+
+    <!-- ── Feedback modal ────────────────────────────────────────────────────── -->
+    <div id="feedback-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;align-items:flex-end;justify-content:center">
+      <div style="width:100%;max-width:600px;background:var(--card);border-radius:1rem 1rem 0 0;padding:1.25rem;max-height:90vh;overflow-y:auto">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+          <span id="feedback-title" style="font-weight:600;font-size:var(--text-base)">Reportar un problema</span>
+          <button id="feedback-close-btn" type="button" class="iconbtn" aria-label="Cerrar">✕</button>
+        </div>
+
+        <div id="feedback-done" style="display:none;text-align:center;padding:2rem 0;font-size:var(--text-sm);color:var(--ink-2)">Reporte enviado con éxito</div>
+
+        <div id="feedback-body">
+          <!-- Mode toggle -->
+          <div style="display:flex;gap:.5rem;margin-bottom:1rem">
+            <button id="fb-tab-bug" type="button" class="btn btn--primary" style="flex:1;font-size:var(--text-sm)">Problema</button>
+            <button id="fb-tab-feature" type="button" class="btn btn--ghost" style="flex:1;font-size:var(--text-sm)">Mejora</button>
+          </div>
+
+          <!-- Screen -->
+          <div style="display:flex;flex-direction:column;gap:.3rem;margin-bottom:.75rem">
+            <label for="fb-screen" style="font-size:var(--text-sm);font-weight:600">Pantalla</label>
+            <input id="fb-screen" type="text" class="manual-input" style="width:100%">
+          </div>
+
+          <!-- Bug fields -->
+          <div id="fb-bug-fields">
+            <div style="display:flex;flex-direction:column;gap:.3rem;margin-bottom:.75rem">
+              <label for="fb-tried" style="font-size:var(--text-sm);font-weight:600">¿Qué intentaste hacer? <span style="color:var(--err)">*</span></label>
+              <textarea id="fb-tried" rows="2" style="width:100%;padding:.5rem .625rem;border:1px solid var(--border);border-radius:.5rem;font-family:inherit;font-size:var(--text-sm);background:var(--card);color:var(--ink);resize:vertical"></textarea>
+              <span id="fb-tried-err" style="display:none;font-size:var(--text-xs);color:var(--err)">Este campo es requerido</span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:.3rem;margin-bottom:.75rem">
+              <label for="fb-expected" style="font-size:var(--text-sm);font-weight:600">¿Qué esperabas que pasara? <span style="color:var(--err)">*</span></label>
+              <textarea id="fb-expected" rows="2" style="width:100%;padding:.5rem .625rem;border:1px solid var(--border);border-radius:.5rem;font-family:inherit;font-size:var(--text-sm);background:var(--card);color:var(--ink);resize:vertical"></textarea>
+              <span id="fb-expected-err" style="display:none;font-size:var(--text-xs);color:var(--err)">Este campo es requerido</span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:.3rem;margin-bottom:.75rem">
+              <label for="fb-happened" style="font-size:var(--text-sm);font-weight:600">¿Qué pasó en realidad? <span style="color:var(--err)">*</span></label>
+              <textarea id="fb-happened" rows="2" style="width:100%;padding:.5rem .625rem;border:1px solid var(--border);border-radius:.5rem;font-family:inherit;font-size:var(--text-sm);background:var(--card);color:var(--ink);resize:vertical"></textarea>
+              <span id="fb-happened-err" style="display:none;font-size:var(--text-xs);color:var(--err)">Este campo es requerido</span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:.3rem;margin-bottom:.75rem">
+              <label for="fb-impact" style="font-size:var(--text-sm);font-weight:600">¿Por qué es un problema? <span style="font-weight:400;color:var(--ink-3)">(opcional)</span></label>
+              <textarea id="fb-impact" rows="2" style="width:100%;padding:.5rem .625rem;border:1px solid var(--border);border-radius:.5rem;font-family:inherit;font-size:var(--text-sm);background:var(--card);color:var(--ink);resize:vertical"></textarea>
+            </div>
+          </div>
+
+          <!-- Feature fields -->
+          <div id="fb-feature-fields" style="display:none">
+            <div style="display:flex;flex-direction:column;gap:.3rem;margin-bottom:.75rem">
+              <label for="fb-proposed" style="font-size:var(--text-sm);font-weight:600">¿Qué cambio implementarías? <span style="color:var(--err)">*</span></label>
+              <textarea id="fb-proposed" rows="3" style="width:100%;padding:.5rem .625rem;border:1px solid var(--border);border-radius:.5rem;font-family:inherit;font-size:var(--text-sm);background:var(--card);color:var(--ink);resize:vertical"></textarea>
+              <span id="fb-proposed-err" style="display:none;font-size:var(--text-xs);color:var(--err)">Este campo es requerido</span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:.3rem;margin-bottom:.75rem">
+              <label for="fb-justification" style="font-size:var(--text-sm);font-weight:600">¿Por qué mejoraría la app? <span style="color:var(--err)">*</span></label>
+              <textarea id="fb-justification" rows="3" style="width:100%;padding:.5rem .625rem;border:1px solid var(--border);border-radius:.5rem;font-family:inherit;font-size:var(--text-sm);background:var(--card);color:var(--ink);resize:vertical"></textarea>
+              <span id="fb-justification-err" style="display:none;font-size:var(--text-xs);color:var(--err)">Este campo es requerido</span>
+            </div>
+          </div>
+
+          <span id="fb-submit-err" style="display:none;font-size:var(--text-xs);color:var(--err);margin-bottom:.5rem"></span>
+
+          <div style="display:flex;gap:.5rem;margin-top:.5rem">
+            <button id="fb-cancel-btn" type="button" class="btn btn--ghost">Cancelar</button>
+            <button id="fb-submit-btn" type="button" class="btn btn--primary btn--expand">Enviar reporte</button>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <footer class="footer">
       <p>Hecho por Javi con ☕ &amp; ✨ en 2026</p>
@@ -1256,6 +1334,92 @@
       $('period-from').addEventListener('change', updateKPIs);
       $('period-to').addEventListener('change', updateKPIs);
       $('tax-category').addEventListener('change', () => { updateKPIs(); if (lastHeaders.length) renderTable({ headers: lastHeaders, rows: lastFetchedRows }); });
+
+      // ── Feedback modal ─────────────────────────────────────────────────────
+      let fbMode = 'bug';
+
+      const fbModal    = $('feedback-modal');
+      const fbBody     = $('feedback-body');
+      const fbDone     = $('feedback-done');
+      const fbTabBug   = $('fb-tab-bug');
+      const fbTabFeat  = $('fb-tab-feature');
+      const fbBugFlds  = $('fb-bug-fields');
+      const fbFeatFlds = $('fb-feature-fields');
+      const fbTitle    = $('feedback-title');
+      const fbSubmit   = $('fb-submit-btn');
+      const fbSubmitErr = $('fb-submit-err');
+
+      const fbOpen = () => {
+        $('fb-screen').value = window.location.pathname;
+        fbDone.style.display = 'none';
+        fbBody.style.display = '';
+        fbSubmit.disabled = false;
+        fbSubmit.textContent = 'Enviar reporte';
+        fbSubmitErr.style.display = 'none';
+        fbModal.style.display = 'flex';
+      };
+      const fbClose = () => { fbModal.style.display = 'none'; };
+      const fbSetMode = (mode) => {
+        fbMode = mode;
+        if (mode === 'bug') {
+          fbTabBug.className  = 'btn btn--primary';
+          fbTabFeat.className = 'btn btn--ghost';
+          fbBugFlds.style.display  = '';
+          fbFeatFlds.style.display = 'none';
+          fbTitle.textContent = 'Reportar un problema';
+        } else {
+          fbTabBug.className  = 'btn btn--ghost';
+          fbTabFeat.className = 'btn btn--primary';
+          fbBugFlds.style.display  = 'none';
+          fbFeatFlds.style.display = '';
+          fbTitle.textContent = 'Sugerir una mejora';
+        }
+        ['fb-tried-err','fb-expected-err','fb-happened-err','fb-proposed-err','fb-justification-err'].forEach((id) => { $(id).style.display = 'none'; });
+        fbSubmitErr.style.display = 'none';
+      };
+
+      const fbValidate = () => {
+        let ok = true;
+        if (fbMode === 'bug') {
+          if (!$('fb-tried').value.trim())    { $('fb-tried-err').style.display    = '';   ok = false; }
+          if (!$('fb-expected').value.trim()) { $('fb-expected-err').style.display = '';   ok = false; }
+          if (!$('fb-happened').value.trim()) { $('fb-happened-err').style.display = '';   ok = false; }
+        } else {
+          if (!$('fb-proposed').value.trim())     { $('fb-proposed-err').style.display     = ''; ok = false; }
+          if (!$('fb-justification').value.trim()) { $('fb-justification-err').style.display = ''; ok = false; }
+        }
+        return ok;
+      };
+
+      fbSubmit.addEventListener('click', async () => {
+        if (!fbValidate()) return;
+        fbSubmit.disabled = true;
+        fbSubmit.innerHTML = '<span class="spinner"></span>';
+        fbSubmitErr.style.display = 'none';
+        const payload = fbMode === 'bug'
+          ? { type: 'bug', screen: $('fb-screen').value, tried: $('fb-tried').value, expected: $('fb-expected').value, happened: $('fb-happened').value, impact: $('fb-impact').value || undefined }
+          : { type: 'feature_request', screen: $('fb-screen').value, proposed_change: $('fb-proposed').value, justification: $('fb-justification').value };
+        try {
+          const res = await fetch('/api/feedback', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload) });
+          if (!res.ok) throw new Error('Error al enviar');
+          fbBody.style.display = 'none';
+          fbDone.style.display = '';
+          setTimeout(fbClose, 1500);
+        } catch (err) {
+          fbSubmitErr.textContent = err.message || 'Error al enviar el reporte';
+          fbSubmitErr.style.display = '';
+          fbSubmit.disabled = false;
+          fbSubmit.textContent = 'Enviar reporte';
+        }
+      });
+
+      $('feedback-open-btn').addEventListener('click', fbOpen);
+      $('feedback-close-btn').addEventListener('click', fbClose);
+      $('fb-cancel-btn').addEventListener('click', fbClose);
+      fbTabBug.addEventListener('click',  () => fbSetMode('bug'));
+      fbTabFeat.addEventListener('click', () => fbSetMode('feature_request'));
+      fbModal.addEventListener('click', (e) => { if (e.target === fbModal) fbClose(); });
+      window.addEventListener('keydown', (e) => { if (e.key === 'Escape' && fbModal.style.display !== 'none') fbClose(); });
 
       // ── Contabilium XLSX parser ───────────────────────────────────────────
 
