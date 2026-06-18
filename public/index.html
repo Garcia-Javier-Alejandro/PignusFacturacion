@@ -1356,6 +1356,9 @@
         fbSubmit.disabled = false;
         fbSubmit.textContent = 'Enviar reporte';
         fbSubmitErr.style.display = 'none';
+        ['fb-tried','fb-expected','fb-happened','fb-impact','fb-proposed','fb-justification'].forEach(id => { $(id).value = ''; });
+        ['fb-tried-err','fb-expected-err','fb-happened-err','fb-proposed-err','fb-justification-err'].forEach(id => { $(id).style.display = 'none'; });
+        fbSetMode('bug');
         fbModal.style.display = 'flex';
       };
       const fbClose = () => { fbModal.style.display = 'none'; };
