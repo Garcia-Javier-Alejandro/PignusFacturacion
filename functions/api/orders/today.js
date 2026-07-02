@@ -66,10 +66,14 @@ export async function onRequestGet({ env, request }) {
       if (walkedPast) break;
     }
 
-    // Pre-dedupe so the billing endpoint (hourly-quota-capped) only runs for new orders
+    // Pre-dedupe so billing (hourly-quota-capped) only runs for new or stale orders.
+    // staleOrders: anywhere in the cache where _iibb is undefined — billing returned
+    // nothing at first sync. These can be older than the ML scan window. Cap at 20
+    // per run to stay safely within the billing endpoint's hourly quota.
     const cache = await getOrdersCache(env);
     const seenSet = new Set(cache.seen_ids || []);
     const newOrders = inWindow.filter((o) => !seenSet.has(String(o.id)));
+    const staleOrders = (cache.orders || []).filter((o) => o._iibb == null).slice(0, 20);
 
     let fetched_today = 0;
     let fetched_yesterday = 0;
@@ -84,6 +88,7 @@ export async function onRequestGet({ env, request }) {
     // fetchedOffset = total seeds next_older_offset = total - 20 on a fresh cache.
     const result = await fetchEnrichAndStore(env, {
       orders: newOrders,
+      staleOrders,
       total,
       fetchedOffset: total,
       isOlderFetch: false,
@@ -94,6 +99,7 @@ export async function onRequestGet({ env, request }) {
       fetched_today,
       fetched_yesterday,
       fetched_backfill,
+      stale_tax_refreshed: staleOrders.length,
       window_days: WINDOW_DAYS,
       window_start: windowStartART,
     });

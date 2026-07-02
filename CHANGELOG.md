@@ -7,6 +7,32 @@ Versions are dated rather than semver-numbered while the system is pre-1.0.
 
 ---
 
+## [2026-07-02]
+
+### Fixed
+- IIBB/SIRTAC showing `$0.00` on orders synced within the ~1-hour window between
+  a sale occurring and ML finishing the billing document. `_iibb` was left as
+  `undefined` in the KV cache; the `seen_ids` dedup prevented any re-fetch on
+  later syncs.
+- Stale-order scan was scoped to the current 14-day ML window — orders older than
+  14 days could never be repaired. Scan now reads directly from `cache.orders`
+  (any age), capped at 20 per sync to respect the billing endpoint's hourly quota.
+- `mergeIntoCache` tax update condition was `new > old`, which does not fire when
+  `old` is `undefined`. Changed to `existing == null || new > existing`.
+
+### Changed
+- `debug-taxes.js` now also returns the cached `_iibb`/`_sirtac` values alongside
+  the live billing API result, so a single request shows both what ML reports and
+  what is stored — the key diagnostic that confirmed the bug above.
+
+### Lesson
+The `seen_ids` dedup protects the billing endpoint quota but makes the cache
+write-once for any field not explicitly handled by the stale-refresh path. Any
+enrichment field that can be absent at first sync needs its own repair mechanism
+that bypasses the dedup check.
+
+---
+
 ## [2026-05-31]
 
 ### Changed

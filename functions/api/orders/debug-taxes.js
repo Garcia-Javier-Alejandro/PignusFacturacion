@@ -1,5 +1,6 @@
 import { errorResponse, json } from '../../_lib/http.js';
 import { getValidAccessToken } from '../../_lib/meliAuth.js';
+import { getOrdersCache } from '../../_lib/ordersCache.js';
 
 export async function onRequestGet({ request, env }) {
   try {
@@ -49,10 +50,18 @@ export async function onRequestGet({ request, env }) {
       };
     });
 
+    const cache = await getOrdersCache(env);
+    const cached = ids.map((id) => {
+      const o = (cache.orders || []).find((c) => String(c.id) === id);
+      if (!o) return { id, in_cache: false };
+      return { id, in_cache: true, _iibb: o._iibb, _sirtac: o._sirtac };
+    });
+
     return json({
       ok: true,
       requested_ids: ids,
       returned_count: summary.length,
+      cached,
       summary,
       raw: body,
     });

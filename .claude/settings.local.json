@@ -24,7 +24,9 @@
       "PowerShell(New-Item *)",
       "Bash(Get-ChildItem C:\\\\dev\\\\git\\\\Pignus\\\\functions\\\\api\\\\orders\\\\ *)",
       "PowerShell(claude --version 2>&1)",
-      "PowerShell(Get-ChildItem C:\\\\dev\\\\git\\\\PignusLabs\\\\Pignusfacturacion -Recurse | Where-Object { $_.FullName -notmatch \"node_modules\" -and -not $_.PSIsContainer } | Select-Object -ExpandProperty FullName)"
+      "PowerShell(Get-ChildItem C:\\\\dev\\\\git\\\\PignusLabs\\\\Pignusfacturacion -Recurse | Where-Object { $_.FullName -notmatch \"node_modules\" -and -not $_.PSIsContainer } | Select-Object -ExpandProperty FullName)",
+      "Bash(xargs grep -l \"modal\")",
+      "PowerShell(git *)"
     ]
   }
 }
