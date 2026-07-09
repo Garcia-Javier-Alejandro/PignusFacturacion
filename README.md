@@ -45,7 +45,7 @@ The frontend (`public/index.html`) is a single vanilla JS page with no framework
 | Nombre | `buyer.first_name + last_name` or `nickname` |
 | Pago | Sum of `order_items[].quantity × unit_price` |
 | Cupón | Coupon discount — `billing/integration` API |
-| Recargo MP | Sum of `order_items[].sale_fee` |
+| Recargo MP | Sum of `order_items[].sale_fee × quantity` |
 | Retencion IIBB | Billing API — `mov_financial_entity` contains `iibb` |
 | Imp SIRTAC | Billing API — `mov_detail` contains `sirtac` |
 | Suma Impuestos | IIBB + SIRTAC |

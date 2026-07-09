@@ -45,7 +45,10 @@ const calculateProductRevenue = (order, payments) => {
 };
 
 const calculateMercadoPagoFee = (order) => (
-  (order.order_items || []).reduce((total, item) => total + toNumber(item.sale_fee), 0)
+  (order.order_items || []).reduce((total, item) => {
+    const quantity = toNumber(item.quantity || 1);
+    return total + toNumber(item.sale_fee) * quantity;
+  }, 0)
 );
 
 export function transformOrderToRow(order) {
