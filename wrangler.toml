@@ -9,3 +9,8 @@ compatibility_date = "2026-05-06"
 [[env.production.kv_namespaces]]
 id = "1ddcfd99d51c4d5ab6cae8b1c8526ddb"
 binding = "PIGNUS_TOKENS"
+
+[[env.production.d1_databases]]
+binding = "PIGNUS_DB"
+database_name = "pignus-facturacion-history"
+database_id = "3073696b-6d8d-4e23-8c14-6d7e779053ed"
