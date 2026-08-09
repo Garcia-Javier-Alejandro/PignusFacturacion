@@ -56,3 +56,16 @@ CREATE TABLE IF NOT EXISTS expenses (
   ingested_at    TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_ex_date ON expenses(date);
+
+-- Canonical, double-count-free ML facturación series (see migration_0002_dedup_view.sql).
+-- meli_live is authoritative; provincias fills history before meli_live coverage begins.
+DROP VIEW IF EXISTS v_ml_facturacion;
+CREATE VIEW v_ml_facturacion AS
+SELECT *
+FROM transactions
+WHERE grain = 'invoice'
+  AND (
+    source = 'meli_live'
+    OR (source = 'provincias'
+        AND date < COALESCE((SELECT MIN(date) FROM transactions WHERE source = 'meli_live'), '9999-12-31'))
+  );
