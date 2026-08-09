@@ -1,20 +1,24 @@
 import { json, errorResponse } from '../../_lib/http.js';
 import { getValidAccessToken } from '../../_lib/meliAuth.js';
 import { getOrdersCache, saveOrdersCache } from '../../_lib/ordersCache.js';
+import { requireSyncAuth } from '../../_lib/cronAuth.js';
 
 // Cached orders are frozen at first fetch (seen_ids blocks re-processing), so an order
 // that was paid when ingested and later cancelled by the customer stays in the cache and
 // keeps counting as "pending to bill" forever. This one-off reconciliation asks ML for the
 // seller's cancelled orders and purges any that are sitting non-invoiced in the cache.
 //
-// Relies on Cloudflare Access to gate the production host (same posture as clear-invoice-dates).
+// Guarded by requireSyncAuth: the custom domain is trusted (Cloudflare Access), the public
+// *.pages.dev host requires the cron secret — so this mutating endpoint isn't openly callable.
 
 const PAGE_SIZE = 50;
 const MAX_PAGES = 30; // ≤1500 cancelled orders scanned — safe upper bound for the account
 
 const isInvoiced = (o) => !!(o._numero_factura || o._fecha_factura);
 
-export async function onRequestPost({ env }) {
+export async function onRequestPost({ env, request }) {
+  const authError = requireSyncAuth(request, env);
+  if (authError) return authError;
   try {
     const cache = await getOrdersCache(env);
     const orders = cache.orders || [];
