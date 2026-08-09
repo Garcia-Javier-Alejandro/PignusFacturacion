@@ -27,6 +27,7 @@ function slimOrder(order) {
     id: order.id,
     pack_id: order.pack_id,
     date_created: order.date_created,
+    status: order.status ?? null,
     payments: (order.payments || []).map((p) => ({
       transaction_amount: p.transaction_amount,
       total_paid_amount: p.total_paid_amount,
@@ -65,7 +66,7 @@ function slimOrder(order) {
 // isOlderFetch=false on "fetch latest" — preserves existing next_older_offset after first load.
 // next_older_offset only goes negative via an explicit import (isOlderFetch=true) so a cron
 // fetch on a fresh cache can never accidentally set the "done" signal.
-export function mergeIntoCache(cache, { newOrders, total, fetchedOffset, isOlderFetch }) {
+export function mergeIntoCache(cache, { newOrders, total, fetchedOffset, isOlderFetch, cancelledIds = [] }) {
   const seenSet = new Set(cache.seen_ids || []);
   const existingById = new Map((cache.orders || []).map((o) => [String(o.id), o]));
 
@@ -87,7 +88,16 @@ export function mergeIntoCache(cache, { newOrders, total, fetchedOffset, isOlder
     added.push(slim);
   }
 
-  const allOrders = [...(cache.orders || []), ...added];
+  // Orders the seller later cancelled must be purged: they were ingested while still
+  // paid, then frozen (seen_ids blocks re-processing), so they'd otherwise count as
+  // "pending to bill" forever. Match on both id and pack_id (a pack collapses to
+  // pack_id in the cache). Keep the ids as seen_ids tombstones so they can't re-enter.
+  const cancelledKeys = new Set(cancelledIds.map(String));
+  for (const key of cancelledKeys) seenSet.add(key);
+  const isCancelled = (o) =>
+    cancelledKeys.has(String(o.id)) || (o.pack_id != null && cancelledKeys.has(String(o.pack_id)));
+
+  const allOrders = [...(cache.orders || []), ...added].filter((o) => !isCancelled(o));
   allOrders.sort((a, b) => new Date(b.date_created).getTime() - new Date(a.date_created).getTime());
 
   const newestDate = allOrders.length > 0 ? allOrders[0].date_created : null;

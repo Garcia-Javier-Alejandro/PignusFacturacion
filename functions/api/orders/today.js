@@ -23,7 +23,8 @@ function artDateStr(utcMs) {
 }
 
 const isPaid = (o) =>
-  o.status === 'paid' || (o.payments || []).some((p) => p.status === 'approved');
+  o.status !== 'cancelled'
+  && (o.status === 'paid' || (o.payments || []).some((p) => p.status === 'approved'));
 
 export async function onRequestGet({ env, request }) {
   const authError = requireSyncAuth(request, env);
@@ -39,6 +40,7 @@ export async function onRequestGet({ env, request }) {
     const sellerId = tokens.seller_id || env.MELI_SELLER_ID;
 
     const inWindow = [];
+    const cancelledIds = []; // in-window orders now cancelled — purge from cache if present
     let total = 0;
     let walkedPast = false;
 
@@ -60,6 +62,11 @@ export async function onRequestGet({ env, request }) {
       for (const o of results) {
         const d = artDateStr(new Date(o.date_created).getTime());
         if (d < windowStartART) { walkedPast = true; break; }
+        if (o.status === 'cancelled') {
+          cancelledIds.push(String(o.id));
+          if (o.pack_id != null) cancelledIds.push(String(o.pack_id));
+          continue;
+        }
         if (!isPaid(o)) continue;
         inWindow.push(o);
       }
@@ -92,6 +99,7 @@ export async function onRequestGet({ env, request }) {
       total,
       fetchedOffset: total,
       isOlderFetch: false,
+      cancelledIds,
     });
 
     return json({

@@ -2,7 +2,7 @@ import { enrichOrders, fetchBillingTaxes } from './meliOrders.js';
 import { OUTPUT_HEADERS, transformOrdersToRows } from './transform.js';
 import { getOrdersCache, saveOrdersCache, mergeIntoCache, isCacheDone } from './ordersCache.js';
 
-export async function fetchEnrichAndStore(env, { orders, staleOrders = [], total, fetchedOffset, isOlderFetch }) {
+export async function fetchEnrichAndStore(env, { orders, staleOrders = [], total, fetchedOffset, isOlderFetch, cancelledIds = [] }) {
   const enriched = await enrichOrders(orders, env);
   const billingTaxes = await fetchBillingTaxes([...enriched, ...staleOrders], env);
   for (const order of [...enriched, ...staleOrders]) {
@@ -11,7 +11,7 @@ export async function fetchEnrichAndStore(env, { orders, staleOrders = [], total
   }
 
   const cache = await getOrdersCache(env);
-  const updated = mergeIntoCache(cache, { newOrders: [...enriched, ...staleOrders], total, fetchedOffset, isOlderFetch });
+  const updated = mergeIntoCache(cache, { newOrders: [...enriched, ...staleOrders], total, fetchedOffset, isOlderFetch, cancelledIds });
   await saveOrdersCache(env, updated);
 
   const rows = transformOrdersToRows(updated.orders);

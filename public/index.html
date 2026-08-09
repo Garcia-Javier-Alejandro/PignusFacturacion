@@ -260,6 +260,7 @@
           <button id="import-btn" type="button" class="btn btn--secondary">Re importar historial</button>
           <button id="enrich-shipping-btn" type="button" class="btn btn--secondary">Re-enriquecer costos envío</button>
           <button id="full-export-btn" type="button" class="btn btn--secondary">↺ Re-exportar todo</button>
+          <button id="reconcile-status-btn" type="button" class="btn btn--secondary">↺ Depurar cancelados</button>
           <button id="clear-cache-btn" type="button" class="btn btn--danger">✕ Limpiar caché</button>
           <button id="clear-dates-btn" type="button" class="btn btn--danger">✕ Limpiar Fecha Factura</button>
           <span id="clear-cache-status" class="debug-status"></span>
@@ -1064,6 +1065,25 @@
           clearCacheSt.textContent = `Error: ${e.message}`;
         } finally {
           $('clear-dates-btn').disabled = false;
+        }
+      });
+
+      $('reconcile-status-btn').addEventListener('click', async () => {
+        clearCacheSt.textContent = '';
+        if (!confirm('¿Revisar pedidos cancelados? Se consultarán los pedidos cancelados en Mercado Libre y se quitarán del caché los que sigan contando como pendientes de facturar.')) return;
+        $('reconcile-status-btn').disabled = true;
+        clearCacheSt.textContent = 'Revisando cancelados…';
+        try {
+          const res = await fetch('/api/orders/reconcile-status', { method: 'POST' });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || 'Error');
+          clearCacheSt.textContent = `✓ ${data.removed} pedido${data.removed !== 1 ? 's' : ''} cancelado${data.removed !== 1 ? 's' : ''} eliminado${data.removed !== 1 ? 's' : ''} (${data.checked} revisados)`;
+          const cacheData = await fetch('/api/orders/cache').then((r) => r.json());
+          if (cacheData.rows?.length) applyData(cacheData);
+        } catch (e) {
+          clearCacheSt.textContent = `Error: ${e.message}`;
+        } finally {
+          $('reconcile-status-btn').disabled = false;
         }
       });
 

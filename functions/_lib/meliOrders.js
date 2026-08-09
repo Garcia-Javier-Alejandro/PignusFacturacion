@@ -2,9 +2,12 @@ import { getValidAccessToken, refreshAccessToken } from './meliAuth.js';
 
 const PAGE_SIZE = 50;
 
+// A cancelled/refunded order keeps its original `approved` payment record, so the
+// payment check alone lets it through. Exclude cancelled explicitly — it is not a sale.
 const isPaidOrder = (order) => (
-  order.status === 'paid'
-  || (order.payments || []).some((payment) => payment.status === 'approved')
+  order.status !== 'cancelled'
+  && (order.status === 'paid'
+    || (order.payments || []).some((payment) => payment.status === 'approved'))
 );
 
 async function requestOrders(params, accessToken) {

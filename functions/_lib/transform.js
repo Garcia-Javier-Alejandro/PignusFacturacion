@@ -115,5 +115,8 @@ function groupOrdersByPack(orders) {
 }
 
 export function transformOrdersToRows(orders) {
-  return groupOrdersByPack(orders).map(transformOrderToRow);
+  // A cancelled order is not a sale — never emit a row for it (keeps it out of every KPI).
+  return groupOrdersByPack(orders)
+    .filter((order) => order.status !== 'cancelled')
+    .map(transformOrderToRow);
 }
