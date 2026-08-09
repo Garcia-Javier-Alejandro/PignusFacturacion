@@ -4,6 +4,7 @@
 CREATE TABLE IF NOT EXISTS transactions (
   id             INTEGER PRIMARY KEY AUTOINCREMENT,
   source         TEXT NOT NULL,        -- 'provincias' | 'mascaras' | 'meli_live'
+  order_id       TEXT,                 -- ML order/pack id (meli_live only); key for idempotent live upserts
   channel        TEXT,                 -- 'ML' | 'IG' | 'FB' | 'other'
   grain          TEXT NOT NULL,        -- 'invoice' | 'line_item'
   date           TEXT,                 -- ISO 'YYYY-MM-DD'
@@ -36,9 +37,9 @@ CREATE INDEX IF NOT EXISTS idx_tx_year    ON transactions(year);
 CREATE INDEX IF NOT EXISTS idx_tx_channel ON transactions(channel);
 CREATE INDEX IF NOT EXISTS idx_tx_source  ON transactions(source);
 CREATE INDEX IF NOT EXISTS idx_tx_product ON transactions(product);
--- facturación dedup: an invoice number can appear once (NULLs unconstrained)
-CREATE UNIQUE INDEX IF NOT EXISTS idx_tx_invoice
-  ON transactions(invoice_number) WHERE invoice_number IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_tx_invoice ON transactions(invoice_number);
+-- meli_live idempotency: one row per ML order/pack. NULLs (historical rows) are distinct in SQLite.
+CREATE UNIQUE INDEX IF NOT EXISTS idx_tx_order ON transactions(order_id);
 
 CREATE TABLE IF NOT EXISTS expenses (
   id             INTEGER PRIMARY KEY AUTOINCREMENT,
