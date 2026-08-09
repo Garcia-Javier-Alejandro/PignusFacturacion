@@ -3,3 +3,6 @@ node_modules/
 npm-debug.log*
 public/debug/orders-summary.json
 .wrangler/
+# ETL data outputs contain customer PII + financials — NEVER commit (repo is public)
+etl/history.db
+etl/history.sql
